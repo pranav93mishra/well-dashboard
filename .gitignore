@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.streamlit/secrets.toml
+
+# Dev/inspection scripts (not needed for deployment)
+inspect_wells.py
+deep_inspect.py
+inspect_cost_comp.py
+dynamic_parser.py
+extract_zips.ps1
+list_zips.ps1
+run_dashboard.bat
+setup_and_run.bat
+data_config.py
