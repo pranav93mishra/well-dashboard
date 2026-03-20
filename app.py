@@ -248,15 +248,17 @@ with tab1:
         st.plotly_chart(fig_mud)
 
     # Grouped bar: Phase distribution
-    st.markdown('<div class="section-header">\U0001f500 Phase Distribution by Hole Size & Well (Top 30)</div>', unsafe_allow_html=True)
-    ph_well_hs = filtered_phases[filtered_phases["Hole Size"] != "N/A"].groupby(
-        ["Well Name", "Hole Size"]).size().reset_index(name="Count")
+    st.markdown('<div class="section-header">\U0001f500 Phase Distribution by Phase & Well (Top 30)</div>', unsafe_allow_html=True)
+    ph_well_hs = filtered_phases[filtered_phases["Hole Size"] != "N/A"].copy()
+    ph_well_hs = ph_well_hs[ph_well_hs["Hole Size"].isin(valid_phases)].copy()
+    ph_well_hs["Phase"] = ph_well_hs["Hole Size"].map(_phase_display_map)
+    ph_well_hs = ph_well_hs.groupby(["Well Name", "Phase"]).size().reset_index(name="Count")
     # Limit to top 30 wells by total count
     top_wells = ph_well_hs.groupby("Well Name")["Count"].sum().nlargest(30).index
     ph_well_hs_top = ph_well_hs[ph_well_hs["Well Name"].isin(top_wells)]
-    fig_grouped = px.bar(ph_well_hs_top, x="Well Name", y="Count", color="Hole Size",
-                         title="Phase Count per Well by Hole Size",
-                         barmode="stack", category_orders={"Hole Size": hole_size_order},
+    fig_grouped = px.bar(ph_well_hs_top, x="Well Name", y="Count", color="Phase",
+                         title="Phase Count per Well",
+                         barmode="stack", category_orders={"Phase": phase_order},
                          color_discrete_sequence=px.colors.qualitative.Plotly)
     fig_grouped.update_layout(height=400, margin=dict(t=40, b=100), xaxis_tickangle=-45)
     st.plotly_chart(fig_grouped)
