@@ -481,7 +481,7 @@ with tab5:
             use_container_width=True, height=400
         )
 
-    # Pie charts for key chemicals
+    # Pie charts for chemicals - dropdown selector
     st.markdown('<div class="section-header">\U0001f967 Annual Chemical Consumption by Phase (Pie Charts)</div>',
                 unsafe_allow_html=True)
 
@@ -750,6 +750,59 @@ with tab6:
                                                 color_discrete_sequence=["#ff9800"])
                     fig_wa_depth.update_layout(height=300, margin=dict(t=50, b=20))
                     st.plotly_chart(fig_wa_depth, use_container_width=True)
+
+        # ── NEW: Well Activity NPT charts and type pie ──────────────────
+        npt_col_wa = "NPT (Hrs)" if "NPT (Hrs)" in wa_df.columns else None
+        if npt_col_wa:
+            col_wa_npt1, col_wa_npt2, col_wa_npt3 = st.columns(3)
+
+            with col_wa_npt1:
+                # NPT by Formation
+                if "Formation Info" in wa_df.columns:
+                    wa_npt_form = wa_df.groupby("Formation Info")[npt_col_wa].sum().reset_index()
+                    wa_npt_form = wa_npt_form[wa_npt_form["Formation Info"].astype(str).str.strip() != ""]
+                    wa_npt_form = wa_npt_form[wa_npt_form[npt_col_wa] > 0].sort_values(npt_col_wa, ascending=True).tail(15)
+                    if not wa_npt_form.empty:
+                        fig_wa_npt_form = px.bar(wa_npt_form, y="Formation Info", x=npt_col_wa,
+                                                  title="Well Activity NPT by Formation (Top 15)",
+                                                  orientation="h", text=npt_col_wa,
+                                                  color=npt_col_wa, color_continuous_scale="Oranges")
+                        fig_wa_npt_form.update_traces(textposition="outside", texttemplate="%{text:,.1f}")
+                        fig_wa_npt_form.update_layout(height=max(300, len(wa_npt_form) * 30 + 80),
+                                                       margin=dict(t=50, b=20), coloraxis_showscale=False)
+                        st.plotly_chart(fig_wa_npt_form, use_container_width=True)
+                    else:
+                        st.info("No NPT by formation data for Well Activity.")
+
+            with col_wa_npt2:
+                # NPT by Well
+                wa_npt_well = wa_df.groupby("Well Name")[npt_col_wa].sum().reset_index()
+                wa_npt_well = wa_npt_well[wa_npt_well[npt_col_wa] > 0].sort_values(npt_col_wa, ascending=True).tail(15)
+                if not wa_npt_well.empty:
+                    fig_wa_npt_well = px.bar(wa_npt_well, y="Well Name", x=npt_col_wa,
+                                              title="Well Activity NPT by Well (Top 15)",
+                                              orientation="h", text=npt_col_wa,
+                                              color=npt_col_wa, color_continuous_scale="YlOrBr")
+                    fig_wa_npt_well.update_traces(textposition="outside", texttemplate="%{text:,.1f}")
+                    fig_wa_npt_well.update_layout(height=max(300, len(wa_npt_well) * 30 + 80),
+                                                   margin=dict(t=50, b=20), coloraxis_showscale=False)
+                    st.plotly_chart(fig_wa_npt_well, use_container_width=True)
+                else:
+                    st.info("No NPT by well data for Well Activity.")
+
+            with col_wa_npt3:
+                # Events by Type pie chart
+                type_col = "Type of Loss/Stuck Up"
+                if type_col in wa_df.columns:
+                    wa_types = wa_df.groupby(type_col).size().reset_index(name="Count")
+                    wa_types = wa_types[wa_types[type_col].astype(str).str.strip() != ""]
+                    if not wa_types.empty:
+                        fig_wa_pie = px.pie(wa_types, names=type_col, values="Count",
+                                            title="Well Activity Events by Type",
+                                            hole=0.4, color_discrete_sequence=px.colors.qualitative.Set2)
+                        fig_wa_pie.update_traces(textposition="inside", textinfo="percent+label")
+                        fig_wa_pie.update_layout(height=380, margin=dict(t=50, b=20))
+                        st.plotly_chart(fig_wa_pie, use_container_width=True)
     else:
         st.info("No well activity events for selected filters.")
 
@@ -853,6 +906,58 @@ with tab6:
                                                 color_discrete_sequence=["#9c27b0"])
                     fig_su_depth.update_layout(height=300, margin=dict(t=50, b=20))
                     st.plotly_chart(fig_su_depth, use_container_width=True)
+
+        # ── NEW: Stuck Up NPT charts and mud system pie ─────────────────
+        npt_col_su = "NPT (Hrs)" if "NPT (Hrs)" in su_df.columns else None
+        if npt_col_su:
+            col_su_npt1, col_su_npt2, col_su_npt3 = st.columns(3)
+
+            with col_su_npt1:
+                # NPT by Formation
+                if "Formation Info" in su_df.columns:
+                    su_npt_form = su_df.groupby("Formation Info")[npt_col_su].sum().reset_index()
+                    su_npt_form = su_npt_form[su_npt_form["Formation Info"].astype(str).str.strip() != ""]
+                    su_npt_form = su_npt_form[su_npt_form[npt_col_su] > 0].sort_values(npt_col_su, ascending=True).tail(15)
+                    if not su_npt_form.empty:
+                        fig_su_npt_form = px.bar(su_npt_form, y="Formation Info", x=npt_col_su,
+                                                  title="Stuck Up NPT by Formation (Top 15)",
+                                                  orientation="h", text=npt_col_su,
+                                                  color=npt_col_su, color_continuous_scale="Purples")
+                        fig_su_npt_form.update_traces(textposition="outside", texttemplate="%{text:,.1f}")
+                        fig_su_npt_form.update_layout(height=max(300, len(su_npt_form) * 30 + 80),
+                                                       margin=dict(t=50, b=20), coloraxis_showscale=False)
+                        st.plotly_chart(fig_su_npt_form, use_container_width=True)
+                    else:
+                        st.info("No NPT by formation data for Stuck Up.")
+
+            with col_su_npt2:
+                # NPT by Well
+                su_npt_well = su_df.groupby("Well Name")[npt_col_su].sum().reset_index()
+                su_npt_well = su_npt_well[su_npt_well[npt_col_su] > 0].sort_values(npt_col_su, ascending=True).tail(15)
+                if not su_npt_well.empty:
+                    fig_su_npt_well = px.bar(su_npt_well, y="Well Name", x=npt_col_su,
+                                              title="Stuck Up NPT by Well (Top 15)",
+                                              orientation="h", text=npt_col_su,
+                                              color=npt_col_su, color_continuous_scale="RdPu")
+                    fig_su_npt_well.update_traces(textposition="outside", texttemplate="%{text:,.1f}")
+                    fig_su_npt_well.update_layout(height=max(300, len(su_npt_well) * 30 + 80),
+                                                   margin=dict(t=50, b=20), coloraxis_showscale=False)
+                    st.plotly_chart(fig_su_npt_well, use_container_width=True)
+                else:
+                    st.info("No NPT by well data for Stuck Up.")
+
+            with col_su_npt3:
+                # Events by Mud System pie chart
+                if "Mud System" in su_df.columns:
+                    su_mud_sys = su_df.groupby("Mud System").size().reset_index(name="Count")
+                    su_mud_sys = su_mud_sys[su_mud_sys["Mud System"].astype(str).str.strip() != ""]
+                    if not su_mud_sys.empty:
+                        fig_su_mud_pie = px.pie(su_mud_sys, names="Mud System", values="Count",
+                                                title="Stuck Up Events by Mud System",
+                                                hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+                        fig_su_mud_pie.update_traces(textposition="inside", textinfo="percent+label")
+                        fig_su_mud_pie.update_layout(height=380, margin=dict(t=50, b=20))
+                        st.plotly_chart(fig_su_mud_pie, use_container_width=True)
     else:
         st.info("No stuck up events for selected filters.")
 
@@ -874,13 +979,14 @@ with tab6:
 # TAB 7 — WELL LOCATION MAP (Enhanced)
 # ═══════════════════════════════════════════════════════════
 
-# Asset color scheme for consistent coloring
+# Asset color scheme for consistent coloring (includes both "Deep Water" and "Deepwater")
 ASSET_COLORS = {
     "B&S Asset": "#e63946",
     "Mumbai High": "#457b9d",
     "Neelam-Heera": "#2a9d8f",
     "Exploratory": "#e9c46a",
     "Deep Water": "#f4a261",
+    "Deepwater": "#f4a261",
     "Other": "#6c757d",
 }
 
@@ -913,7 +1019,7 @@ with tab7:
 
     # ── Build map data with complication info ──────────────────────────────
     map_cols = ["Well Name", "Asset", "Field", "Latitude", "Longitude",
-                "Max Depth (m)", "Total Cost (INR)", "Category",
+                "Max Depth (m)", "Meterage (m)", "Total Cost (INR)", "Category",
                 "Total NPT (Hrs)", "Mud Loss Events", "Well Activity Events",
                 "Stuck Up Events", "Total Complications", "Total Mud Handled (bbl)",
                 "Cost per Meter (INR)", "Well Status"]
@@ -921,13 +1027,14 @@ with tab7:
     map_df = filtered_wells[available_map_cols].copy()
     map_df["Total Cost (INR Cr)"] = (map_df["Total Cost (INR)"] / 1e7).round(3)
 
-    # Build rich hover text with complication details
+    # Build rich hover text with complication details and meterage
     def build_hover_text(row):
         lines = [
             f"<b>{row['Well Name']}</b>",
             f"Asset: {row['Asset']} | Field: {row.get('Field', 'N/A')}",
             f"Category: {row.get('Category', 'N/A')} | Status: {row.get('Well Status', 'N/A')}",
             f"Max Depth: {row.get('Max Depth (m)', 0):,.0f} m",
+            f"Meterage: {row.get('Meterage (m)', 0):,.0f} m",
             f"Total Cost: INR {row.get('Total Cost (INR Cr)', 0):.3f} Cr",
             f"Mud Handled: {row.get('Total Mud Handled (bbl)', 0):,.0f} bbl",
             f"Cost/m: INR {row.get('Cost per Meter (INR)', 0):,.0f}",
@@ -951,6 +1058,8 @@ with tab7:
         return "<br>".join(lines)
 
     valid_map = map_df[(map_df["Latitude"] != 0) & (map_df["Longitude"] != 0)].copy()
+    # Wells with no coordinates (lat=0 or lon=0)
+    no_coord_wells = map_df[(map_df["Latitude"] == 0) | (map_df["Longitude"] == 0)].copy()
 
     if not valid_map.empty:
         valid_map["hover_text"] = valid_map.apply(build_hover_text, axis=1)
@@ -965,7 +1074,8 @@ with tab7:
         col_style1, col_style2 = st.columns([1, 3])
         with col_style1:
             map_style = st.selectbox("Map Style", [
-                "open-street-map", "carto-positron", "carto-darkmatter"
+                "open-street-map", "carto-positron", "carto-darkmatter",
+                "stamen-terrain", "stamen-toner",
             ], index=0, key="map_style")
 
         # ── Main Map with Asset-colored markers ──────────────────────
@@ -1067,6 +1177,17 @@ with tab7:
         </div>
         """, unsafe_allow_html=True)
 
+        # ── Wells NOT on map (no coordinates) ─────────────────────────
+        if not no_coord_wells.empty:
+            st.markdown(f"""
+            <div style="background:#fff3cd; border:1px solid #ffc107; padding:12px 16px;
+                 border-radius:8px; margin:12px 0; color:#856404;">
+                <b>Warning:</b> {len(no_coord_wells)} well(s) could not be plotted (missing coordinates):
+            </div>
+            """, unsafe_allow_html=True)
+            no_coord_list = no_coord_wells[["Well Name", "Asset", "Field"]].copy()
+            st.dataframe(no_coord_list, use_container_width=True, height=min(200, len(no_coord_wells) * 40 + 50))
+
         # ── Nearby Wells Results (if searched) ───────────────────────
         if do_search:
             st.markdown('<div class="section-header">\U0001f4cd Nearby Wells within {} km of ({:.4f}, {:.4f})</div>'.format(
@@ -1138,6 +1259,32 @@ with tab7:
                 st.metric("Total NPT", f"{w_row.get('Total NPT (Hrs)', 0):.1f} hrs")
                 st.metric("Planned vs Actual Days", f"{w_row.get('Planned Days',0):.0f} / {w_row.get('Actual Days',0):.0f}")
                 st.markdown("</div>", unsafe_allow_html=True)
+
+            # ── Phases table for selected well ────────────────────────
+            well_phases = phases_df[phases_df["Well Name"] == selected_well]
+            if not well_phases.empty:
+                st.markdown(f'<div class="section-header">\U0001f4cb Phases for {selected_well}</div>',
+                            unsafe_allow_html=True)
+                phase_display_cols = [c for c in [
+                    "Phase", "Hole Size", "Mud Type", "Depth From (m)", "Depth To (m)",
+                    "Interval (m)", "Planned Days", "Actual Days", "Time Variance (days)",
+                    "Volume Handled (bbl)", "Cost per Meter (INR)", "Cost per Barrel (INR)",
+                    "Actual Cost (INR)"
+                ] if c in well_phases.columns]
+                st.dataframe(
+                    well_phases[phase_display_cols].style.format({
+                        "Interval (m)": "{:,.0f}",
+                        "Depth From (m)": "{:,.0f}",
+                        "Depth To (m)": "{:,.0f}",
+                        "Volume Handled (bbl)": "{:,.0f}",
+                        "Cost per Meter (INR)": "{:,.0f}",
+                        "Cost per Barrel (INR)": "{:,.0f}",
+                        "Actual Cost (INR)": "{:,.0f}",
+                        "Time Variance (days)": "{:+.1f}",
+                    }),
+                    use_container_width=True,
+                    height=min(300, len(well_phases) * 40 + 50)
+                )
 
             # Complication details for selected well
             comp_total = (w_row.get('Mud Loss Events', 0) + w_row.get('Well Activity Events', 0)
@@ -1212,6 +1359,11 @@ with tab7:
 
     else:
         st.info("No wells with valid coordinates to display on map.")
+
+    # ── Wells NOT on map warning (shown even if valid_map is empty) ──
+    if valid_map.empty and not no_coord_wells.empty:
+        st.warning(f"{len(no_coord_wells)} well(s) have no coordinates and cannot be mapped.")
+        st.dataframe(no_coord_wells[["Well Name", "Asset", "Field"]], use_container_width=True)
 
     # ── Well Location Table ──────────────────────────────────────────
     st.markdown('<div class="section-header">\U0001f4ca Well Location Table</div>', unsafe_allow_html=True)

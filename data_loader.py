@@ -193,7 +193,7 @@ def build_complications_dataframe(comp_type="mud_loss"):
                 "Layer": c.get('layer', ''),
                 "Type of Pill/Action": c.get('pill_type', ''),
                 "Mud Volume Lost (bbl)": c.get('volume_lost_bbl', 0),
-                "NPT (Hrs)": 0,
+                "NPT (Hrs)": c.get('npt_hrs', 0),
             })
     return pd.DataFrame(records) if records else pd.DataFrame()
 
