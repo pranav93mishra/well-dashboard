@@ -1585,37 +1585,62 @@ with tab8:
 
         # ── Formation-wise Mud Parameter Comparison ──
         if not phase_data.empty:
-            st.markdown('<div class="section-header">\U0001f30d Formation-wise Mud Weight Comparison</div>',
+            st.markdown('<div class="section-header">\U0001f30d Formation-wise Mud Parameter Comparison</div>',
                         unsafe_allow_html=True)
             form_data = phase_data[phase_data["Formation"].str.strip() != ""].copy()
             if not form_data.empty:
                 form_avg = form_data.groupby("Formation").agg({
-                    "MW (PPG) Min": "mean", "MW (PPG) Max": "mean", "MW (PPG) Last": "mean",
-                    "PV (cP) Last": "mean", "YP (lb/100ft2) Last": "mean",
+                    "MW (PPG) Last": "mean",
+                    "PV (cP) Last": "mean",
+                    "YP (lb/100ft2) Last": "mean",
+                    "FV (sec) Last": "mean",
+                    "GEL0 (lb/100ft2) Last": "mean",
+                    "GEL10 (lb/100ft2) Last": "mean",
+                    "Solid% Last": "mean",
+                    "Chlorides (ppm) Last": "mean",
+                    "HTHP F/L (mL) Last": "mean",
+                    "ES (V) Last": "mean",
+                    "pH Last": "mean",
                     "Well Name": "count"
                 }).reset_index()
-                form_avg.columns = ["Formation", "Avg MW Min", "Avg MW Max", "Avg MW Last", "Avg PV", "Avg YP", "Well Count"]
-                form_avg = form_avg[form_avg["Well Count"] >= 1].sort_values("Avg MW Last", ascending=True)
+                form_avg.columns = ["Formation", "Avg MW (PPG)", "Avg PV (cP)", "Avg YP (lb/100ft2)",
+                                    "Avg FV (sec)", "Avg GEL0", "Avg GEL10",
+                                    "Avg Solid%", "Avg Chlorides (ppm)", "Avg HTHP F/L (mL)",
+                                    "Avg ES (V)", "Avg pH", "Well Count"]
+                form_avg = form_avg[form_avg["Well Count"] >= 1].sort_values("Avg MW (PPG)", ascending=True)
 
-                col_f1, col_f2 = st.columns(2)
-                with col_f1:
-                    fig_form_mw = px.bar(form_avg.tail(15), y="Formation", x="Avg MW Last",
-                                          title="Avg Mud Weight by Formation (PPG)",
-                                          orientation="h", text="Avg MW Last",
-                                          color="Avg MW Last", color_continuous_scale="Blues")
-                    fig_form_mw.update_traces(texttemplate="%{text:.1f}", textposition="outside")
-                    fig_form_mw.update_layout(height=max(300, len(form_avg.tail(15)) * 30 + 80),
-                                               margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_form_mw, use_container_width=True)
-                with col_f2:
-                    fig_form_pv = px.bar(form_avg.tail(15), y="Formation", x="Avg PV",
-                                          title="Avg PV by Formation (cP)",
-                                          orientation="h", text="Avg PV",
-                                          color="Avg PV", color_continuous_scale="Oranges")
-                    fig_form_pv.update_traces(texttemplate="%{text:.1f}", textposition="outside")
-                    fig_form_pv.update_layout(height=max(300, len(form_avg.tail(15)) * 30 + 80),
-                                               margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_form_pv, use_container_width=True)
+                # All formation charts - 3 per row
+                FORM_CHARTS = [
+                    ("Avg MW (PPG)", "Avg Mud Weight by Formation (PPG)", "Blues"),
+                    ("Avg PV (cP)", "Avg PV by Formation (cP)", "Oranges"),
+                    ("Avg YP (lb/100ft2)", "Avg YP by Formation (lb/100ft2)", "Greens"),
+                    ("Avg FV (sec)", "Avg FV by Formation (sec)", "Purples"),
+                    ("Avg GEL0", "Avg GEL0 by Formation (lb/100ft2)", "Teal"),
+                    ("Avg GEL10", "Avg GEL10 by Formation (lb/100ft2)", "Mint"),
+                    ("Avg Solid%", "Avg Solid% by Formation", "Reds"),
+                    ("Avg Chlorides (ppm)", "Avg Chlorides by Formation (ppm)", "YlOrBr"),
+                    ("Avg HTHP F/L (mL)", "Avg HTHP F/L by Formation (mL)", "RdPu"),
+                    ("Avg ES (V)", "Avg ES by Formation (V)", "Viridis"),
+                    ("Avg pH", "Avg pH by Formation", "Cividis"),
+                ]
+
+                for row_start in range(0, len(FORM_CHARTS), 3):
+                    cols = st.columns(min(3, len(FORM_CHARTS) - row_start))
+                    for idx, col in enumerate(cols):
+                        cidx = row_start + idx
+                        if cidx >= len(FORM_CHARTS):
+                            break
+                        col_name, title, cscale = FORM_CHARTS[cidx]
+                        chart_df = form_avg[form_avg[col_name] > 0].sort_values(col_name, ascending=True).tail(15)
+                        if not chart_df.empty:
+                            fig = px.bar(chart_df, y="Formation", x=col_name,
+                                         title=title, orientation="h", text=col_name,
+                                         color=col_name, color_continuous_scale=cscale)
+                            fig.update_traces(texttemplate="%{text:.1f}", textposition="outside")
+                            fig.update_layout(height=max(280, len(chart_df) * 28 + 80),
+                                              margin=dict(t=50, b=20), coloraxis_showscale=False)
+                            with col:
+                                st.plotly_chart(fig, use_container_width=True)
 
         # ── Export ──
         if not mp_filtered.empty:
