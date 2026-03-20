@@ -305,8 +305,74 @@ with tab2:
             fig_npt_well.update_layout(height=500, margin=dict(t=50, b=20))
             st.plotly_chart(fig_npt_well)
 
+    # ── NPT by Drilling Phase (broken down by complication type) ──
+    st.markdown('<div class="section-header">\U0001f3c6 NPT by Drilling Phase</div>', unsafe_allow_html=True)
+    st.markdown("*Drilling activity is the top contributor to NPT — this chart breaks it down by drilling phase and complication type.*")
+
+    # Combine all complication types with phase & NPT info
+    phase_npt_records = []
+    for comp_type_key, comp_label in [("mud_loss", "Mud Loss"), ("well_activity", "Well Activity"), ("stuck_up", "Stuck Up")]:
+        comp_df = data[comp_type_key]
+        if not comp_df.empty and "Phase" in comp_df.columns and "NPT (Hrs)" in comp_df.columns:
+            temp = comp_df[["Phase", "NPT (Hrs)"]].copy()
+            temp["NPT (Hrs)"] = pd.to_numeric(temp["NPT (Hrs)"], errors="coerce").fillna(0)
+            temp = temp[temp["NPT (Hrs)"] > 0].copy()
+            temp["Phase"] = temp["Phase"].str.strip()
+            temp = temp[temp["Phase"] != ""]
+            temp["Complication Type"] = comp_label
+            phase_npt_records.append(temp)
+
+    if phase_npt_records:
+        phase_npt_df = pd.concat(phase_npt_records, ignore_index=True)
+        phase_npt_agg = phase_npt_df.groupby(["Phase", "Complication Type"])["NPT (Hrs)"].sum().reset_index()
+
+        # Sort phases by total NPT descending
+        phase_order = phase_npt_agg.groupby("Phase")["NPT (Hrs)"].sum().sort_values(ascending=True).index.tolist()
+        phase_npt_agg["Phase"] = pd.Categorical(phase_npt_agg["Phase"], categories=phase_order, ordered=True)
+
+        col_phase_npt1, col_phase_npt2 = st.columns([3, 2])
+
+        with col_phase_npt1:
+            fig_phase_npt = px.bar(
+                phase_npt_agg, y="Phase", x="NPT (Hrs)", color="Complication Type",
+                orientation="h", barmode="stack",
+                title="NPT Hours by Drilling Phase",
+                color_discrete_map={"Mud Loss": "#e53935", "Well Activity": "#ff9800", "Stuck Up": "#9c27b0"},
+                text="NPT (Hrs)",
+            )
+            fig_phase_npt.update_traces(texttemplate="%{text:.0f}", textposition="inside")
+            fig_phase_npt.update_layout(
+                height=max(350, len(phase_order) * 40 + 80),
+                margin=dict(t=50, b=20),
+                yaxis_title="Drilling Phase",
+                xaxis_title="NPT (Hours)",
+            )
+            st.plotly_chart(fig_phase_npt)
+
+        with col_phase_npt2:
+            # Pie chart of total NPT by phase
+            phase_totals = phase_npt_df.groupby("Phase")["NPT (Hrs)"].sum().reset_index()
+            phase_totals = phase_totals.sort_values("NPT (Hrs)", ascending=False)
+            fig_phase_pie = px.pie(
+                phase_totals, names="Phase", values="NPT (Hrs)",
+                title="NPT Distribution by Phase",
+                hole=0.4,
+                color_discrete_sequence=px.colors.qualitative.Set2,
+            )
+            fig_phase_pie.update_traces(textposition="inside", textinfo="percent+label")
+            fig_phase_pie.update_layout(height=400, margin=dict(t=50, b=20))
+            st.plotly_chart(fig_phase_pie)
+
+        # Summary table
+        phase_pivot = phase_npt_df.pivot_table(
+            index="Phase", columns="Complication Type", values="NPT (Hrs)", aggfunc="sum", fill_value=0
+        ).reset_index()
+        phase_pivot["Total NPT (Hrs)"] = phase_pivot.select_dtypes(include="number").sum(axis=1)
+        phase_pivot = phase_pivot.sort_values("Total NPT (Hrs)", ascending=False)
+        st.dataframe(phase_pivot, height=min(400, len(phase_pivot) * 38 + 60))
+
     # Top Activities Contributing to NPT
-    st.markdown('<div class="section-header">\U0001f3c6 Top Activities Contributing to NPT</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">\U0001f4cb Top Activities Contributing to NPT (by Operation)</div>', unsafe_allow_html=True)
     mud_loss_all = data["mud_loss"]
     if not mud_loss_all.empty:
         activity_npt = mud_loss_all.groupby("Operation in Brief").size().reset_index(name="Count")
