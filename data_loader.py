@@ -299,6 +299,52 @@ def get_chemical_totals():
     return chem_by_name
 
 
+def build_mud_parameters_dataframe():
+    """Build mud parameters DataFrame with min/max/last ranges per phase per well."""
+    wells = load_wells_json()
+    records = []
+    for w in wells:
+        for mp in w.get('mud_parameters', []):
+            rec = {
+                "Well Name": w['well_name'],
+                "Asset": w.get('asset', ''),
+                "Field": w.get('field', ''),
+                "Phase": mp.get('phase', ''),
+                "Depth (m)": mp.get('depth', 0),
+                "Mud System": mp.get('mud_system', ''),
+                "Formation": mp.get('formation', ''),
+                "Layer": mp.get('layer', ''),
+                "Lithology": mp.get('lithology', ''),
+            }
+            # Add all mud parameter ranges
+            MUD_PARAMS = [
+                ('MW (PPG)', 'mud_weight_ppg'),
+                ('FV (sec)', 'fv_sec'),
+                ('PV (cP)', 'pv_cp'),
+                ('YP (lb/100ft2)', 'yp_lb100ft2'),
+                ('GEL0 (lb/100ft2)', 'gel0_lb100ft2'),
+                ('GEL10 (lb/100ft2)', 'gel10_lb100ft2'),
+                ('R6', 'r6'),
+                ('R3', 'r3'),
+                ('OWR Oil%', 'owr_oil_pct'),
+                ('OWR Water%', 'owr_water_pct'),
+                ('Solid%', 'solid_pct'),
+                ('Chlorides (ppm)', 'chlorides_ppm'),
+                ('HTHP F/L (mL)', 'hthp_fl_ml'),
+                ('Ex. Lime (ppb)', 'ex_lime_ppb'),
+                ('ES (V)', 'es_v'),
+                ('WPS (ppm)', 'wps_ppm'),
+                ('pH', 'ph'),
+                ('FLT (°C)', 'flt_c'),
+            ]
+            for display_name, key_prefix in MUD_PARAMS:
+                rec[f"{display_name} Min"] = mp.get(f"{key_prefix}_min", 0)
+                rec[f"{display_name} Max"] = mp.get(f"{key_prefix}_max", 0)
+                rec[f"{display_name} Last"] = mp.get(f"{key_prefix}_last", 0)
+            records.append(rec)
+    return pd.DataFrame(records) if records else pd.DataFrame()
+
+
 def scan_for_new_wells(base_dir=WELL_CARDS_DIR):
     """Scan for new well card files not in current data."""
     wells = load_wells_json()

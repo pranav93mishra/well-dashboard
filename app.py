@@ -18,6 +18,7 @@ from data_loader import (
     build_complications_dataframe, build_npt_summary_dataframe,
     build_chemicals_dataframe, build_cost_analysis_dataframe,
     get_chemical_totals, scan_for_new_wells, load_wells_json,
+    build_mud_parameters_dataframe,
     MUD_TYPE_COLORS,
 )
 
@@ -67,6 +68,7 @@ def load_data():
         "chemicals": build_chemicals_dataframe(),
         "cost": build_cost_analysis_dataframe(),
         "chem_totals": get_chemical_totals(),
+        "mud_params": build_mud_parameters_dataframe(),
     }
 
 data = load_data()
@@ -169,9 +171,10 @@ with col6:
 st.markdown("---")
 
 # ── TABS ─────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "\U0001f4ca Overview", "\u23f1\ufe0f NPT Details", "\U0001f5fa\ufe0f Well Coverage",
-    "\U0001f4b0 Cost Analysis", "\U0001f9ea Chemical Analysis", "\u26a0\ufe0f Complications", "\U0001f4cd Well Location"
+    "\U0001f4b0 Cost Analysis", "\U0001f9ea Chemical Analysis", "\u26a0\ufe0f Complications",
+    "\U0001f4cd Well Location", "\U0001f9ea Mud Parameters"
 ])
 
 # ═══════════════════════════════════════════════════════════
@@ -1220,6 +1223,35 @@ with tab7:
                     }).background_gradient(subset=["Distance (km)"], cmap="RdYlGn_r"),
                     use_container_width=True, height=min(400, len(nearby) * 40 + 60)
                 )
+
+                # ── Nearby Wells: Mud Parameters, Formation & Complications ──
+                mud_params_df = data["mud_params"]
+                if not mud_params_df.empty:
+                    nearby_wells_list = nearby["Well Name"].tolist()
+                    nearby_mud = mud_params_df[mud_params_df["Well Name"].isin(nearby_wells_list)].copy()
+                    if not nearby_mud.empty:
+                        st.markdown('<div class="section-header">\U0001f9ea Nearby Wells - Mud Parameters, Depth, Formation & Complications</div>',
+                                    unsafe_allow_html=True)
+                        # Add distance to mud params
+                        dist_map = nearby.set_index("Well Name")["Distance (km)"].to_dict()
+                        nearby_mud["Distance (km)"] = nearby_mud["Well Name"].map(dist_map)
+                        # Add complication info
+                        comp_map = nearby.set_index("Well Name")[["Total Complications", "Total NPT (Hrs)"]].to_dict('index')
+                        nearby_mud["Complications"] = nearby_mud["Well Name"].map(
+                            lambda w: comp_map.get(w, {}).get("Total Complications", 0))
+                        nearby_mud["NPT (Hrs)"] = nearby_mud["Well Name"].map(
+                            lambda w: comp_map.get(w, {}).get("Total NPT (Hrs)", 0))
+                        nearby_mud = nearby_mud.sort_values("Distance (km)")
+                        display_cols = ["Well Name", "Distance (km)", "Phase", "Depth (m)", "Mud System",
+                                        "Formation", "Lithology",
+                                        "MW (PPG) Min", "MW (PPG) Max",
+                                        "PV (cP) Min", "PV (cP) Max",
+                                        "YP (lb/100ft2) Min", "YP (lb/100ft2) Max",
+                                        "FV (sec) Min", "FV (sec) Max",
+                                        "Complications", "NPT (Hrs)"]
+                        avail_cols = [c for c in display_cols if c in nearby_mud.columns]
+                        st.dataframe(nearby_mud[avail_cols], use_container_width=True,
+                                     height=min(500, len(nearby_mud) * 38 + 60))
             else:
                 st.warning(f"No wells found within {search_radius} km of the search location.")
 
@@ -1414,6 +1446,189 @@ with tab7:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
+
+# ═══════════════════════════════════════════════════════════
+# TAB 8 — MUD PARAMETERS
+# ═══════════════════════════════════════════════════════════
+with tab8:
+    mud_params_all = data["mud_params"]
+
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #43a047 100%);
+         padding: 18px 24px; border-radius: 12px; margin-bottom: 16px; color: white;">
+        <h2 style="margin:0; font-size:1.6rem;">\U0001f9ea Mud Parameters Dashboard</h2>
+        <p style="margin:4px 0 0 0; opacity:0.8; font-size:0.9rem;">
+            Min / Max / Last values per phase per well \u00b7 {len(mud_params_all)} phase records from {mud_params_all['Well Name'].nunique() if not mud_params_all.empty else 0} wells
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if not mud_params_all.empty:
+        # Apply filters
+        mp_filtered = mud_params_all.copy()
+        if sel_wells:
+            mp_filtered = mp_filtered[mp_filtered["Well Name"].isin(sel_wells)]
+        if sel_assets:
+            mp_filtered = mp_filtered[mp_filtered["Asset"].isin(sel_assets)]
+
+        # ── Summary Table (key parameters range) ──
+        st.markdown('<div class="section-header">\U0001f4cb Mud Parameters Summary Table (Min - Max Range)</div>',
+                    unsafe_allow_html=True)
+
+        # Build a clean summary with key parameters showing range as "min - max"
+        KEY_PARAMS = [
+            ("MW (PPG)", "MW (PPG)"),
+            ("FV (sec)", "FV (sec)"),
+            ("PV (cP)", "PV (cP)"),
+            ("YP (lb/100ft2)", "YP"),
+            ("GEL0 (lb/100ft2)", "GEL0"),
+            ("GEL10 (lb/100ft2)", "GEL10"),
+            ("Solid%", "Solid%"),
+            ("Chlorides (ppm)", "Chlorides"),
+            ("HTHP F/L (mL)", "HTHP"),
+            ("ES (V)", "ES"),
+            ("pH", "pH"),
+        ]
+
+        summary_records = []
+        for _, row in mp_filtered.iterrows():
+            rec = {
+                "Well Name": row["Well Name"],
+                "Asset": row.get("Asset", ""),
+                "Phase": row.get("Phase", ""),
+                "Depth (m)": row.get("Depth (m)", 0),
+                "Mud System": row.get("Mud System", ""),
+                "Formation": row.get("Formation", ""),
+                "Layer": row.get("Layer", ""),
+                "Lithology": row.get("Lithology", ""),
+            }
+            for full_name, short_name in KEY_PARAMS:
+                mn = row.get(f"{full_name} Min", 0)
+                mx = row.get(f"{full_name} Max", 0)
+                last = row.get(f"{full_name} Last", 0)
+                if mx > 0:
+                    rec[f"{short_name} (Min-Max)"] = f"{mn:.1f} - {mx:.1f}"
+                    rec[f"{short_name} Last"] = round(last, 2)
+                else:
+                    rec[f"{short_name} (Min-Max)"] = "-"
+                    rec[f"{short_name} Last"] = 0
+            summary_records.append(rec)
+
+        summary_df = pd.DataFrame(summary_records)
+        st.dataframe(summary_df, use_container_width=True, height=500)
+
+        # ── Phase Selector for Detailed View ──
+        st.markdown('<div class="section-header">\U0001f50d Detailed Mud Parameters by Phase</div>',
+                    unsafe_allow_html=True)
+
+        all_mp_phases = sorted(mp_filtered["Phase"].unique().tolist())
+        selected_mp_phase = st.selectbox("Select Phase to View Details", ["All Phases"] + all_mp_phases,
+                                          key="mp_phase_select")
+
+        if selected_mp_phase != "All Phases":
+            phase_data = mp_filtered[mp_filtered["Phase"] == selected_mp_phase]
+        else:
+            phase_data = mp_filtered
+
+        # ── Range Charts for Key Parameters ──
+        if not phase_data.empty and len(phase_data) > 0:
+            st.markdown(f'<div class="section-header">\U0001f4ca Parameter Ranges — {selected_mp_phase} ({len(phase_data)} wells)</div>',
+                        unsafe_allow_html=True)
+
+            CHART_PARAMS = [
+                ("MW (PPG)", "Mud Weight (PPG)", "Blues"),
+                ("PV (cP)", "Plastic Viscosity (cP)", "Oranges"),
+                ("YP (lb/100ft2)", "Yield Point (lb/100ft2)", "Greens"),
+                ("FV (sec)", "Funnel Viscosity (sec)", "Purples"),
+                ("Solid%", "Solid Content (%)", "Reds"),
+                ("pH", "pH", "Teal"),
+            ]
+
+            for row_start in range(0, len(CHART_PARAMS), 3):
+                cols = st.columns(min(3, len(CHART_PARAMS) - row_start))
+                for idx, col in enumerate(cols):
+                    pidx = row_start + idx
+                    if pidx >= len(CHART_PARAMS):
+                        break
+                    param_full, param_title, color_scale = CHART_PARAMS[pidx]
+
+                    chart_data = phase_data[["Well Name", f"{param_full} Min", f"{param_full} Max", f"{param_full} Last"]].copy()
+                    chart_data = chart_data[chart_data[f"{param_full} Max"] > 0]
+                    chart_data = chart_data.sort_values(f"{param_full} Max", ascending=True).tail(20)
+
+                    if not chart_data.empty:
+                        fig = go.Figure()
+                        # Range bar (min to max)
+                        for _, r in chart_data.iterrows():
+                            fig.add_trace(go.Bar(
+                                y=[r["Well Name"]], x=[r[f"{param_full} Max"] - r[f"{param_full} Min"]],
+                                base=[r[f"{param_full} Min"]],
+                                orientation="h",
+                                marker_color="#90caf9",
+                                showlegend=False,
+                                hovertemplate=f"<b>{r['Well Name']}</b><br>Min: {r[f'{param_full} Min']:.1f}<br>Max: {r[f'{param_full} Max']:.1f}<br>Last: {r[f'{param_full} Last']:.1f}<extra></extra>",
+                            ))
+                        # Last value markers
+                        fig.add_trace(go.Scatter(
+                            y=chart_data["Well Name"], x=chart_data[f"{param_full} Last"],
+                            mode="markers", marker=dict(size=8, color="#e53935", symbol="diamond"),
+                            name="Last Value", showlegend=True,
+                        ))
+                        fig.update_layout(
+                            title=param_title, height=max(250, len(chart_data) * 25 + 80),
+                            margin=dict(t=40, b=20, l=100, r=20),
+                            barmode="overlay", showlegend=True,
+                            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+                        )
+                        with col:
+                            st.plotly_chart(fig, use_container_width=True)
+
+        # ── Formation-wise Mud Parameter Comparison ──
+        if not phase_data.empty:
+            st.markdown('<div class="section-header">\U0001f30d Formation-wise Mud Weight Comparison</div>',
+                        unsafe_allow_html=True)
+            form_data = phase_data[phase_data["Formation"].str.strip() != ""].copy()
+            if not form_data.empty:
+                form_avg = form_data.groupby("Formation").agg({
+                    "MW (PPG) Min": "mean", "MW (PPG) Max": "mean", "MW (PPG) Last": "mean",
+                    "PV (cP) Last": "mean", "YP (lb/100ft2) Last": "mean",
+                    "Well Name": "count"
+                }).reset_index()
+                form_avg.columns = ["Formation", "Avg MW Min", "Avg MW Max", "Avg MW Last", "Avg PV", "Avg YP", "Well Count"]
+                form_avg = form_avg[form_avg["Well Count"] >= 1].sort_values("Avg MW Last", ascending=True)
+
+                col_f1, col_f2 = st.columns(2)
+                with col_f1:
+                    fig_form_mw = px.bar(form_avg.tail(15), y="Formation", x="Avg MW Last",
+                                          title="Avg Mud Weight by Formation (PPG)",
+                                          orientation="h", text="Avg MW Last",
+                                          color="Avg MW Last", color_continuous_scale="Blues")
+                    fig_form_mw.update_traces(texttemplate="%{text:.1f}", textposition="outside")
+                    fig_form_mw.update_layout(height=max(300, len(form_avg.tail(15)) * 30 + 80),
+                                               margin=dict(t=50, b=20), coloraxis_showscale=False)
+                    st.plotly_chart(fig_form_mw, use_container_width=True)
+                with col_f2:
+                    fig_form_pv = px.bar(form_avg.tail(15), y="Formation", x="Avg PV",
+                                          title="Avg PV by Formation (cP)",
+                                          orientation="h", text="Avg PV",
+                                          color="Avg PV", color_continuous_scale="Oranges")
+                    fig_form_pv.update_traces(texttemplate="%{text:.1f}", textposition="outside")
+                    fig_form_pv.update_layout(height=max(300, len(form_avg.tail(15)) * 30 + 80),
+                                               margin=dict(t=50, b=20), coloraxis_showscale=False)
+                    st.plotly_chart(fig_form_pv, use_container_width=True)
+
+        # ── Export ──
+        if not mp_filtered.empty:
+            buf_mp = io.BytesIO()
+            with pd.ExcelWriter(buf_mp, engine='openpyxl') as writer:
+                summary_df.to_excel(writer, sheet_name="Mud Params Summary", index=False)
+                mp_filtered.to_excel(writer, sheet_name="Full Mud Parameters", index=False)
+            st.download_button("\u2b07\ufe0f Export Mud Parameters (Excel)", buf_mp.getvalue(),
+                               "mud_parameters.xlsx",
+                               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    else:
+        st.info("No mud parameter data available.")
+
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("---")
