@@ -128,7 +128,7 @@ with st.sidebar:
                                 placeholder="All Types")
 
     st.markdown("---")
-    if st.button("\U0001f504 Refresh Data", use_container_width=True):
+    if st.button("\U0001f504 Refresh Data"):
         st.cache_data.clear()
         st.rerun()
 
@@ -191,7 +191,7 @@ with tab1:
                            color_discrete_sequence=px.colors.qualitative.Set2)
         fig_asset.update_traces(textposition="outside")
         fig_asset.update_layout(showlegend=False, height=320, margin=dict(t=40, b=20))
-        st.plotly_chart(fig_asset, use_container_width=True)
+        st.plotly_chart(fig_asset)
 
     with col_right:
         cat_counts = filtered_wells.groupby("Category").size().reset_index(name="Count")
@@ -200,7 +200,7 @@ with tab1:
                          color_discrete_sequence=px.colors.qualitative.Set1)
         fig_cat.update_traces(textposition="outside")
         fig_cat.update_layout(showlegend=False, height=320, margin=dict(t=40, b=20))
-        st.plotly_chart(fig_cat, use_container_width=True)
+        st.plotly_chart(fig_cat)
 
     st.markdown('<div class="section-header">\U0001f4cf Well Count by Phase & Hole Size</div>', unsafe_allow_html=True)
 
@@ -217,7 +217,7 @@ with tab1:
                             color_discrete_sequence=px.colors.sequential.Blues_r)
             fig_hs.update_traces(textposition="outside")
             fig_hs.update_layout(showlegend=False, height=340, margin=dict(t=40, b=20))
-            st.plotly_chart(fig_hs, use_container_width=True)
+            st.plotly_chart(fig_hs)
 
     with col_b:
         mud_counts = filtered_phases.groupby("Mud Type").size().reset_index(name="Phase Count")
@@ -228,7 +228,7 @@ with tab1:
                          color_discrete_map=MUD_TYPE_COLORS)
         fig_mud.update_traces(textposition="outside")
         fig_mud.update_layout(showlegend=False, height=340, margin=dict(t=40, b=20))
-        st.plotly_chart(fig_mud, use_container_width=True)
+        st.plotly_chart(fig_mud)
 
     # Grouped bar: Phase distribution
     st.markdown('<div class="section-header">\U0001f500 Phase Distribution by Hole Size & Well (Top 30)</div>', unsafe_allow_html=True)
@@ -242,7 +242,7 @@ with tab1:
                          barmode="stack", category_orders={"Hole Size": hole_size_order},
                          color_discrete_sequence=px.colors.qualitative.Plotly)
     fig_grouped.update_layout(height=400, margin=dict(t=40, b=100), xaxis_tickangle=-45)
-    st.plotly_chart(fig_grouped, use_container_width=True)
+    st.plotly_chart(fig_grouped)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -269,7 +269,7 @@ with tab2:
         "Total NPT (Hrs)": npt_display_nonzero["Total NPT (Hrs)"].sum(),
     }])
     npt_with_total = pd.concat([npt_display_nonzero, total_row], ignore_index=True)
-    st.dataframe(npt_with_total, use_container_width=True, height=400)
+    st.dataframe(npt_with_total, height=400)
 
     col_npt1, col_npt2 = st.columns(2)
     with col_npt1:
@@ -288,7 +288,7 @@ with tab2:
                                  hole=0.4)
             fig_npt_pie.update_traces(textposition="inside", textinfo="percent+label")
             fig_npt_pie.update_layout(height=380, margin=dict(t=50, b=20))
-            st.plotly_chart(fig_npt_pie, use_container_width=True)
+            st.plotly_chart(fig_npt_pie)
 
     with col_npt2:
         st.markdown('<div class="section-header">\U0001f4ca NPT by Well (Top 20)</div>', unsafe_allow_html=True)
@@ -303,7 +303,7 @@ with tab2:
                 title="NPT Hours by Well (Top 20)",
                 color_discrete_sequence=["#e53935", "#ff9800", "#2196f3", "#9c27b0"])
             fig_npt_well.update_layout(height=500, margin=dict(t=50, b=20))
-            st.plotly_chart(fig_npt_well, use_container_width=True)
+            st.plotly_chart(fig_npt_well)
 
     # Top Activities Contributing to NPT
     st.markdown('<div class="section-header">\U0001f3c6 Top Activities Contributing to NPT</div>', unsafe_allow_html=True)
@@ -319,7 +319,7 @@ with tab2:
             fig_activities.update_traces(textposition="outside")
             fig_activities.update_layout(height=max(300, len(activity_npt) * 35 + 80),
                                          margin=dict(t=50, b=20), coloraxis_showscale=False)
-            st.plotly_chart(fig_activities, use_container_width=True)
+            st.plotly_chart(fig_activities)
 
     csv_npt = npt_display.to_csv(index=False).encode()
     st.download_button("\u2b07\ufe0f Export NPT Data (CSV)", csv_npt, "npt_data.csv", "text/csv")
@@ -350,8 +350,7 @@ with tab3:
             "Total Cost (INR)": "{:,.0f}",
             "Total Cost (INR Cr)": "{:.3f}",
             "Time Variance (days)": "{:+.1f}",
-        }),
-        use_container_width=True, height=500
+        }), height=500
     )
 
     st.markdown('<div class="section-header">\U0001f4c8 Well Coverage KPIs</div>', unsafe_allow_html=True)
@@ -364,7 +363,7 @@ with tab3:
                            color_discrete_sequence=px.colors.qualitative.Set1)
         fig_depth.update_traces(textposition="outside", texttemplate="%{text:,.0f}")
         fig_depth.update_layout(height=400, margin=dict(t=50, b=100), xaxis_tickangle=-45)
-        st.plotly_chart(fig_depth, use_container_width=True)
+        st.plotly_chart(fig_depth)
 
     with col_kpi2:
         top30_mud = filtered_wells.nlargest(30, "Total Mud Handled (bbl)")
@@ -373,7 +372,7 @@ with tab3:
                          color_discrete_sequence=px.colors.qualitative.Set1)
         fig_mud.update_traces(textposition="outside", texttemplate="%{text:,.0f}")
         fig_mud.update_layout(height=400, margin=dict(t=50, b=100), xaxis_tickangle=-45)
-        st.plotly_chart(fig_mud, use_container_width=True)
+        st.plotly_chart(fig_mud)
 
     # ── Planned Days vs Actual Days ──
     st.markdown('<div class="section-header">\U0001f4c5 Planned Days vs Actual Days by Well</div>', unsafe_allow_html=True)
@@ -398,7 +397,7 @@ with tab3:
         fig_days.update_traces(texttemplate="%{text:.0f}", textposition="outside", textfont_size=9)
         fig_days.update_layout(height=max(450, len(days_df) * 2 + 200), margin=dict(t=50, b=120), xaxis_tickangle=-45,
                                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5))
-        st.plotly_chart(fig_days, use_container_width=True)
+        st.plotly_chart(fig_days)
 
     csv_cov = coverage_df.to_csv(index=False).encode()
     st.download_button("\u2b07\ufe0f Export Well Coverage (CSV)", csv_cov, "well_coverage.csv", "text/csv")
@@ -421,8 +420,7 @@ with tab4:
             "Total Cost (INR)": "{:,.0f}",
             "Cost per Meter (INR)": "{:,.0f}",
             "Cost per Barrel (INR)": "{:,.0f}",
-        }),
-        use_container_width=True, height=400
+        }), height=400
     )
 
     # Phase-wise cost table
@@ -440,8 +438,7 @@ with tab4:
             "Cost per Meter (INR)": "{:,.0f}",
             "Cost per Barrel (INR)": "{:,.0f}",
             "Interval (m)": "{:,.0f}",
-        }),
-        use_container_width=True, height=420
+        }), height=420
     )
 
     # Cost charts
@@ -453,7 +450,7 @@ with tab4:
                          color_discrete_sequence=px.colors.qualitative.Pastel)
         fig_cpm.update_traces(textposition="outside", texttemplate="%{text:,.0f}")
         fig_cpm.update_layout(height=400, margin=dict(t=50, b=100), xaxis_tickangle=-45)
-        st.plotly_chart(fig_cpm, use_container_width=True)
+        st.plotly_chart(fig_cpm)
 
     with col_c2:
         top30_cpb = filtered_wells[filtered_wells["Cost per Barrel (INR)"] > 0].nlargest(30, "Cost per Barrel (INR)")
@@ -462,7 +459,7 @@ with tab4:
                          color_discrete_sequence=px.colors.qualitative.Pastel)
         fig_cpb.update_traces(textposition="outside", texttemplate="%{text:,.0f}")
         fig_cpb.update_layout(height=400, margin=dict(t=50, b=100), xaxis_tickangle=-45)
-        st.plotly_chart(fig_cpb, use_container_width=True)
+        st.plotly_chart(fig_cpb)
 
     # Total cost comparison
     st.markdown('<div class="section-header">\U0001f4b5 Total Cost Comparison (Top 30)</div>', unsafe_allow_html=True)
@@ -474,7 +471,7 @@ with tab4:
                              color_discrete_sequence=px.colors.qualitative.Set2)
     fig_total_cost.update_traces(textposition="outside", texttemplate="%{text:.2f}")
     fig_total_cost.update_layout(height=420, margin=dict(t=50, b=100), xaxis_tickangle=-45)
-    st.plotly_chart(fig_total_cost, use_container_width=True)
+    st.plotly_chart(fig_total_cost)
 
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
@@ -505,8 +502,7 @@ with tab5:
             chem_display.style.format({
                 "Consumption": "{:,.0f}",
                 "Actual Cost (INR)": "{:,.0f}",
-            }),
-            use_container_width=True, height=400
+            }), height=400
         )
 
     # Pie charts for chemicals - dropdown selector
@@ -555,7 +551,7 @@ with tab5:
                         fig_pie.update_traces(textposition="inside", textinfo="percent+label", textfont_size=9)
                         fig_pie.update_layout(height=300, margin=dict(t=60, b=10, l=10, r=10), showlegend=False)
                         with col:
-                            st.plotly_chart(fig_pie, use_container_width=True)
+                            st.plotly_chart(fig_pie)
         else:
             # Show detailed pie chart for the selected chemical
             chem_item = chem_totals[selected_chemical]
@@ -574,7 +570,7 @@ with tab5:
                                      hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
                     fig_pie.update_traces(textposition="inside", textinfo="percent+label", textfont_size=10)
                     fig_pie.update_layout(height=450, margin=dict(t=70, b=20, l=20, r=20))
-                    st.plotly_chart(fig_pie, use_container_width=True)
+                    st.plotly_chart(fig_pie)
 
                 with col_info:
                     st.markdown(f"**{selected_chemical}**")
@@ -602,7 +598,7 @@ with tab5:
                                color_discrete_sequence=px.colors.qualitative.Pastel)
         fig_chem_well.update_layout(height=420, margin=dict(t=50, b=100),
                                     xaxis_tickangle=-45, legend_title="Chemical")
-        st.plotly_chart(fig_chem_well, use_container_width=True)
+        st.plotly_chart(fig_chem_well)
 
     if not chem_df.empty:
         csv_chem = chem_display.to_csv(index=False).encode()
@@ -632,7 +628,7 @@ with tab6:
 
     if not mud_loss_df.empty:
         available_cols = [c for c in comp_cols if c in mud_loss_df.columns]
-        st.dataframe(mud_loss_df[available_cols], use_container_width=True, height=350)
+        st.dataframe(mud_loss_df[available_cols], height=350)
 
         col_ml1, col_ml2, col_ml3 = st.columns(3)
         with col_ml1:
@@ -655,7 +651,7 @@ with tab6:
                 fig_ml_well.update_traces(textposition="outside", texttemplate="%{text:,.0f}")
                 fig_ml_well.update_layout(height=max(300, len(ml_well_counts) * 30 + 80),
                                           margin=dict(t=50, b=20), coloraxis_showscale=False)
-                st.plotly_chart(fig_ml_well, use_container_width=True)
+                st.plotly_chart(fig_ml_well)
 
         with col_ml_g2:
             if "Formation Info" in mud_loss_df.columns:
@@ -669,7 +665,7 @@ with tab6:
                     fig_form.update_traces(textposition="outside", texttemplate="%{text:,.0f}")
                     fig_form.update_layout(height=max(300, len(form_loss) * 30 + 80),
                                            margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_form, use_container_width=True)
+                    st.plotly_chart(fig_form)
 
         # Loss type pie chart and depth distribution
         col_ml_g3, col_ml_g4 = st.columns(2)
@@ -684,7 +680,7 @@ with tab6:
                                         hole=0.4, color_discrete_sequence=px.colors.qualitative.Set2)
                     fig_ml_pie.update_traces(textposition="inside", textinfo="percent+label")
                     fig_ml_pie.update_layout(height=380, margin=dict(t=50, b=20))
-                    st.plotly_chart(fig_ml_pie, use_container_width=True)
+                    st.plotly_chart(fig_ml_pie)
 
         with col_ml_g4:
             if "Depth of Occurrence (m)" in mud_loss_df.columns:
@@ -694,7 +690,7 @@ with tab6:
                                                 title="Mud Loss Events - Depth Distribution",
                                                 color_discrete_sequence=["#e53935"])
                     fig_ml_depth.update_layout(height=380, margin=dict(t=50, b=20))
-                    st.plotly_chart(fig_ml_depth, use_container_width=True)
+                    st.plotly_chart(fig_ml_depth)
     else:
         st.info("No mud loss events for selected filters.")
 
@@ -710,7 +706,7 @@ with tab6:
 
     if not wa_df.empty:
         available_cols = [c for c in comp_cols if c in wa_df.columns]
-        st.dataframe(wa_df[available_cols], use_container_width=True, height=300)
+        st.dataframe(wa_df[available_cols], height=300)
 
         col_wa1, col_wa2, col_wa3 = st.columns(3)
         with col_wa1:
@@ -735,7 +731,7 @@ with tab6:
                 fig_wa_well.update_traces(textposition="outside")
                 fig_wa_well.update_layout(height=max(300, len(wa_well_counts) * 30 + 80),
                                           margin=dict(t=50, b=20), coloraxis_showscale=False)
-                st.plotly_chart(fig_wa_well, use_container_width=True)
+                st.plotly_chart(fig_wa_well)
 
         with col_wa_g2:
             # Events by Operation
@@ -750,7 +746,7 @@ with tab6:
                     fig_wa_ops.update_traces(textposition="outside")
                     fig_wa_ops.update_layout(height=max(300, len(wa_ops) * 30 + 80),
                                              margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_wa_ops, use_container_width=True)
+                    st.plotly_chart(fig_wa_ops)
 
         col_wa_g3, col_wa_g4 = st.columns(2)
         with col_wa_g3:
@@ -766,7 +762,7 @@ with tab6:
                     fig_wa_form.update_traces(textposition="outside")
                     fig_wa_form.update_layout(height=max(300, len(wa_form) * 30 + 80),
                                               margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_wa_form, use_container_width=True)
+                    st.plotly_chart(fig_wa_form)
 
         with col_wa_g4:
             # Depth distribution of well activity events
@@ -777,7 +773,7 @@ with tab6:
                                                 title="Well Activity Events - Depth Distribution",
                                                 color_discrete_sequence=["#ff9800"])
                     fig_wa_depth.update_layout(height=300, margin=dict(t=50, b=20))
-                    st.plotly_chart(fig_wa_depth, use_container_width=True)
+                    st.plotly_chart(fig_wa_depth)
 
         # ── NEW: Well Activity NPT charts and type pie ──────────────────
         npt_col_wa = "NPT (Hrs)" if "NPT (Hrs)" in wa_df.columns else None
@@ -798,7 +794,7 @@ with tab6:
                         fig_wa_npt_form.update_traces(textposition="outside", texttemplate="%{text:,.1f}")
                         fig_wa_npt_form.update_layout(height=max(300, len(wa_npt_form) * 30 + 80),
                                                        margin=dict(t=50, b=20), coloraxis_showscale=False)
-                        st.plotly_chart(fig_wa_npt_form, use_container_width=True)
+                        st.plotly_chart(fig_wa_npt_form)
                     else:
                         st.info("No NPT by formation data for Well Activity.")
 
@@ -814,7 +810,7 @@ with tab6:
                     fig_wa_npt_well.update_traces(textposition="outside", texttemplate="%{text:,.1f}")
                     fig_wa_npt_well.update_layout(height=max(300, len(wa_npt_well) * 30 + 80),
                                                    margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_wa_npt_well, use_container_width=True)
+                    st.plotly_chart(fig_wa_npt_well)
                 else:
                     st.info("No NPT by well data for Well Activity.")
 
@@ -830,7 +826,7 @@ with tab6:
                                             hole=0.4, color_discrete_sequence=px.colors.qualitative.Set2)
                         fig_wa_pie.update_traces(textposition="inside", textinfo="percent+label")
                         fig_wa_pie.update_layout(height=380, margin=dict(t=50, b=20))
-                        st.plotly_chart(fig_wa_pie, use_container_width=True)
+                        st.plotly_chart(fig_wa_pie)
     else:
         st.info("No well activity events for selected filters.")
 
@@ -848,7 +844,7 @@ with tab6:
 
     if not su_df.empty:
         available_cols = [c for c in comp_cols if c in su_df.columns]
-        st.dataframe(su_df[available_cols], use_container_width=True, height=300)
+        st.dataframe(su_df[available_cols], height=300)
 
         col_su1, col_su2, col_su3 = st.columns(3)
         with col_su1:
@@ -873,7 +869,7 @@ with tab6:
                 fig_su_well.update_traces(textposition="outside")
                 fig_su_well.update_layout(height=max(300, len(su_well_counts) * 30 + 80),
                                           margin=dict(t=50, b=20), coloraxis_showscale=False)
-                st.plotly_chart(fig_su_well, use_container_width=True)
+                st.plotly_chart(fig_su_well)
 
         with col_su_g2:
             # Events by Type of Stuck Up
@@ -889,7 +885,7 @@ with tab6:
                     fig_su_type.update_traces(textposition="outside")
                     fig_su_type.update_layout(height=max(300, len(su_types) * 30 + 80),
                                               margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_su_type, use_container_width=True)
+                    st.plotly_chart(fig_su_type)
 
         col_su_g3, col_su_g4 = st.columns(2)
         with col_su_g3:
@@ -905,7 +901,7 @@ with tab6:
                     fig_su_ops.update_traces(textposition="outside")
                     fig_su_ops.update_layout(height=max(300, len(su_ops) * 30 + 80),
                                              margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_su_ops, use_container_width=True)
+                    st.plotly_chart(fig_su_ops)
 
         with col_su_g4:
             # Stuck Up by Formation
@@ -920,7 +916,7 @@ with tab6:
                     fig_su_form.update_traces(textposition="outside")
                     fig_su_form.update_layout(height=max(300, len(su_form) * 30 + 80),
                                               margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_su_form, use_container_width=True)
+                    st.plotly_chart(fig_su_form)
 
         # Depth distribution row
         col_su_g5, col_su_g6 = st.columns(2)
@@ -933,7 +929,7 @@ with tab6:
                                                 title="Stuck Up Events - Depth Distribution",
                                                 color_discrete_sequence=["#9c27b0"])
                     fig_su_depth.update_layout(height=300, margin=dict(t=50, b=20))
-                    st.plotly_chart(fig_su_depth, use_container_width=True)
+                    st.plotly_chart(fig_su_depth)
 
         # ── NEW: Stuck Up NPT charts and mud system pie ─────────────────
         npt_col_su = "NPT (Hrs)" if "NPT (Hrs)" in su_df.columns else None
@@ -954,7 +950,7 @@ with tab6:
                         fig_su_npt_form.update_traces(textposition="outside", texttemplate="%{text:,.1f}")
                         fig_su_npt_form.update_layout(height=max(300, len(su_npt_form) * 30 + 80),
                                                        margin=dict(t=50, b=20), coloraxis_showscale=False)
-                        st.plotly_chart(fig_su_npt_form, use_container_width=True)
+                        st.plotly_chart(fig_su_npt_form)
                     else:
                         st.info("No NPT by formation data for Stuck Up.")
 
@@ -970,7 +966,7 @@ with tab6:
                     fig_su_npt_well.update_traces(textposition="outside", texttemplate="%{text:,.1f}")
                     fig_su_npt_well.update_layout(height=max(300, len(su_npt_well) * 30 + 80),
                                                    margin=dict(t=50, b=20), coloraxis_showscale=False)
-                    st.plotly_chart(fig_su_npt_well, use_container_width=True)
+                    st.plotly_chart(fig_su_npt_well)
                 else:
                     st.info("No NPT by well data for Stuck Up.")
 
@@ -985,7 +981,7 @@ with tab6:
                                                 hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
                         fig_su_mud_pie.update_traces(textposition="inside", textinfo="percent+label")
                         fig_su_mud_pie.update_layout(height=380, margin=dict(t=50, b=20))
-                        st.plotly_chart(fig_su_mud_pie, use_container_width=True)
+                        st.plotly_chart(fig_su_mud_pie)
     else:
         st.info("No stuck up events for selected filters.")
 
@@ -1043,7 +1039,7 @@ with tab7:
     with col_search3:
         search_radius = st.selectbox("Radius (km)", [10, 25, 50, 100, 200, 500], index=2, key="search_radius")
     with col_search4:
-        do_search = st.button("\U0001f50e Find Nearby Wells", use_container_width=True)
+        do_search = st.button("\U0001f50e Find Nearby Wells")
 
     # ── Build map data with complication info ──────────────────────────────
     map_cols = ["Well Name", "Asset", "Field", "Latitude", "Longitude",
@@ -1193,7 +1189,7 @@ with tab7:
             ),
         )
 
-        st.plotly_chart(fig_map, use_container_width=True)
+        st.plotly_chart(fig_map)
 
         # ── Legend explanation ────────────────────────────────────────
         st.markdown("""
@@ -1214,7 +1210,7 @@ with tab7:
             </div>
             """, unsafe_allow_html=True)
             no_coord_list = no_coord_wells[["Well Name", "Asset", "Field"]].copy()
-            st.dataframe(no_coord_list, use_container_width=True, height=min(200, len(no_coord_wells) * 40 + 50))
+            st.dataframe(no_coord_list, height=min(200, len(no_coord_wells) * 40 + 50))
 
         # ── Nearby Wells Results (if searched) ───────────────────────
         if do_search:
@@ -1245,8 +1241,7 @@ with tab7:
                         "Max Depth (m)": "{:,.0f}",
                         "Total Cost (INR Cr)": "{:.3f}",
                         "Total NPT (Hrs)": "{:.1f}",
-                    }).background_gradient(subset=["Distance (km)"], cmap="RdYlGn_r"),
-                    use_container_width=True, height=min(400, len(nearby) * 40 + 60)
+                    }).background_gradient(subset=["Distance (km)"], cmap="RdYlGn_r"), height=min(400, len(nearby) * 40 + 60)
                 )
 
                 # ── Nearby Wells: Mud Parameters, Formation & Complications ──
@@ -1275,7 +1270,7 @@ with tab7:
                                         "FV (sec) Min", "FV (sec) Max",
                                         "Complications", "NPT (Hrs)"]
                         avail_cols = [c for c in display_cols if c in nearby_mud.columns]
-                        st.dataframe(nearby_mud[avail_cols], use_container_width=True,
+                        st.dataframe(nearby_mud[avail_cols],
                                      height=min(500, len(nearby_mud) * 38 + 60))
             else:
                 st.warning(f"No wells found within {search_radius} km of the search location.")
@@ -1339,7 +1334,6 @@ with tab7:
                         "Actual Cost (INR)": "{:,.0f}",
                         "Time Variance (days)": "{:+.1f}",
                     }),
-                    use_container_width=True,
                     height=min(300, len(well_phases) * 40 + 50)
                 )
 
@@ -1376,7 +1370,7 @@ with tab7:
                             display_cols = [c for c in ["Phase", "Date of Occurrence", "Depth of Occurrence (m)",
                                             "Mud System", "Operation in Brief", "Type of Loss/Stuck Up",
                                             "Formation Info", "Mud Volume Lost (bbl)"] if c in well_comp.columns]
-                            st.dataframe(well_comp[display_cols], use_container_width=True,
+                            st.dataframe(well_comp[display_cols],
                                          height=min(200, len(well_comp) * 40 + 50))
             else:
                 st.success(f"No complications recorded for {selected_well}")
@@ -1398,7 +1392,7 @@ with tab7:
                                    hole=0.4)
             fig_asset_map.update_traces(textposition="inside", textinfo="percent+label+value")
             fig_asset_map.update_layout(height=350, margin=dict(t=50, b=20))
-            st.plotly_chart(fig_asset_map, use_container_width=True)
+            st.plotly_chart(fig_asset_map)
 
         with col_cluster2:
             comp_by_asset = valid_map.groupby("Asset").agg(
@@ -1412,7 +1406,7 @@ with tab7:
                                     barmode="stack",
                                     color_discrete_sequence=["#e53935", "#ff9800", "#9c27b0"])
             fig_comp_asset.update_layout(height=350, margin=dict(t=50, b=20))
-            st.plotly_chart(fig_comp_asset, use_container_width=True)
+            st.plotly_chart(fig_comp_asset)
 
     else:
         st.info("No wells with valid coordinates to display on map.")
@@ -1420,7 +1414,7 @@ with tab7:
     # ── Wells NOT on map warning (shown even if valid_map is empty) ──
     if valid_map.empty and not no_coord_wells.empty:
         st.warning(f"{len(no_coord_wells)} well(s) have no coordinates and cannot be mapped.")
-        st.dataframe(no_coord_wells[["Well Name", "Asset", "Field"]], use_container_width=True)
+        st.dataframe(no_coord_wells[["Well Name", "Asset", "Field"]])
 
     # ── Well Location Table ──────────────────────────────────────────
     st.markdown('<div class="section-header">\U0001f4ca Well Location Table</div>', unsafe_allow_html=True)
@@ -1432,7 +1426,7 @@ with tab7:
     format_dict = {"Latitude": "{:.6f}", "Longitude": "{:.6f}", "Max Depth (m)": "{:,.0f}",
                    "Total Cost (INR Cr)": "{:.3f}", "Total NPT (Hrs)": "{:.1f}"}
     format_dict = {k: v for k, v in format_dict.items() if k in loc_display.columns}
-    st.dataframe(loc_display.style.format(format_dict), use_container_width=True, height=400)
+    st.dataframe(loc_display.style.format(format_dict), height=400)
 
     # ── Automation & Export ──────────────────────────────────────────
     st.markdown('<div class="section-header">\u26a1 Automation \u2014 New Well Card Detection</div>', unsafe_allow_html=True)
@@ -1468,8 +1462,7 @@ with tab7:
         "\u2b07\ufe0f Export Full Dashboard Data (Excel)",
         buf_all.getvalue(),
         f"well_dashboard_export_{date.today().strftime('%Y%m%d')}.xlsx",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
 # ═══════════════════════════════════════════════════════════
@@ -1540,7 +1533,7 @@ with tab8:
             summary_records.append(rec)
 
         summary_df = pd.DataFrame(summary_records)
-        st.dataframe(summary_df, use_container_width=True, height=500)
+        st.dataframe(summary_df, height=500)
 
         # ── Phase Selector for Detailed View ──
         st.markdown('<div class="section-header">\U0001f50d Detailed Mud Parameters by Phase</div>',
@@ -1606,7 +1599,7 @@ with tab8:
                             legend=dict(orientation="h", yanchor="bottom", y=1.02),
                         )
                         with col:
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig)
 
         # ── Formation-wise Mud Parameter Comparison ──
         if not phase_data.empty:
@@ -1665,7 +1658,7 @@ with tab8:
                             fig.update_layout(height=max(280, len(chart_df) * 28 + 80),
                                               margin=dict(t=50, b=20), coloraxis_showscale=False)
                             with col:
-                                st.plotly_chart(fig, use_container_width=True)
+                                st.plotly_chart(fig)
 
         # ── Export ──
         if not mp_filtered.empty:
