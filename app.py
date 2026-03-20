@@ -691,6 +691,34 @@ with tab6:
                                                 color_discrete_sequence=["#e53935"])
                     fig_ml_depth.update_layout(height=380, margin=dict(t=50, b=20))
                     st.plotly_chart(fig_ml_depth)
+
+        # --- Type of Loss by Formation (stacked bar chart) ---
+        type_col = "Type of Loss/Stuck Up"
+        form_col = "Formation Info"
+        if type_col in mud_loss_df.columns and form_col in mud_loss_df.columns:
+            tl_df = mud_loss_df[[form_col, type_col]].copy()
+            tl_df[form_col] = tl_df[form_col].astype(str).str.strip().str.title()
+            tl_df[type_col] = tl_df[type_col].astype(str).str.strip().str.title()
+            tl_df = tl_df[(tl_df[form_col] != "") & (tl_df[type_col] != "")]
+            if not tl_df.empty:
+                tl_cross = tl_df.groupby([form_col, type_col]).size().reset_index(name="Event Count")
+                # Order formations by total events descending
+                form_order = tl_cross.groupby(form_col)["Event Count"].sum().sort_values(ascending=False).index.tolist()
+                loss_type_colors = {"Partial": "#FF7043", "Total": "#E53935", "Seepage": "#FFA726", "Induced": "#AB47BC"}
+                fig_tl = px.bar(tl_cross, x=form_col, y="Event Count", color=type_col,
+                                title="Type of Loss by Formation",
+                                barmode="group",
+                                color_discrete_map=loss_type_colors,
+                                category_orders={form_col: form_order},
+                                text="Event Count")
+                fig_tl.update_traces(textposition="outside")
+                fig_tl.update_layout(
+                    height=480, margin=dict(t=60, b=40),
+                    xaxis_title="Formation", yaxis_title="Number of Events",
+                    legend_title="Loss Type",
+                    xaxis_tickangle=-45
+                )
+                st.plotly_chart(fig_tl)
     else:
         st.info("No mud loss events for selected filters.")
 
