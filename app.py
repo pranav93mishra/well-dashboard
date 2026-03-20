@@ -379,17 +379,24 @@ with tab3:
     st.markdown('<div class="section-header">\U0001f4c5 Planned Days vs Actual Days by Well</div>', unsafe_allow_html=True)
     days_df = filtered_wells[["Well Name", "Asset", "Planned Days", "Actual Days"]].copy()
     days_df = days_df[(days_df["Planned Days"] > 0) | (days_df["Actual Days"] > 0)]
-    days_df = days_df.sort_values("Actual Days", ascending=False).head(40)
+    days_df = days_df.sort_values("Actual Days", ascending=False)
+
+    # If a specific asset/area is selected, show ALL wells for that asset; otherwise limit to 40
+    if sel_assets:
+        chart_title = f"Planned vs Actual Days — {', '.join(sel_assets)} ({len(days_df)} wells)"
+    else:
+        days_df = days_df.head(40)
+        chart_title = "Planned vs Actual Days (Top 40 Wells — select an Asset to see all)"
 
     if not days_df.empty:
         days_melted = days_df.melt(id_vars=["Well Name", "Asset"], value_vars=["Planned Days", "Actual Days"],
                                     var_name="Type", value_name="Days")
         fig_days = px.bar(days_melted, x="Well Name", y="Days", color="Type", barmode="group",
-                          title="Planned vs Actual Days (Top 40 Wells)",
+                          title=chart_title,
                           color_discrete_map={"Planned Days": "#1976d2", "Actual Days": "#e53935"},
                           text="Days")
         fig_days.update_traces(texttemplate="%{text:.0f}", textposition="outside", textfont_size=9)
-        fig_days.update_layout(height=450, margin=dict(t=50, b=120), xaxis_tickangle=-45,
+        fig_days.update_layout(height=max(450, len(days_df) * 2 + 200), margin=dict(t=50, b=120), xaxis_tickangle=-45,
                                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5))
         st.plotly_chart(fig_days, use_container_width=True)
 
