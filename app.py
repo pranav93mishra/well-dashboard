@@ -375,6 +375,24 @@ with tab3:
         fig_mud.update_layout(height=400, margin=dict(t=50, b=100), xaxis_tickangle=-45)
         st.plotly_chart(fig_mud, use_container_width=True)
 
+    # ── Planned Days vs Actual Days ──
+    st.markdown('<div class="section-header">\U0001f4c5 Planned Days vs Actual Days by Well</div>', unsafe_allow_html=True)
+    days_df = filtered_wells[["Well Name", "Asset", "Planned Days", "Actual Days"]].copy()
+    days_df = days_df[(days_df["Planned Days"] > 0) | (days_df["Actual Days"] > 0)]
+    days_df = days_df.sort_values("Actual Days", ascending=False).head(40)
+
+    if not days_df.empty:
+        days_melted = days_df.melt(id_vars=["Well Name", "Asset"], value_vars=["Planned Days", "Actual Days"],
+                                    var_name="Type", value_name="Days")
+        fig_days = px.bar(days_melted, x="Well Name", y="Days", color="Type", barmode="group",
+                          title="Planned vs Actual Days (Top 40 Wells)",
+                          color_discrete_map={"Planned Days": "#1976d2", "Actual Days": "#e53935"},
+                          text="Days")
+        fig_days.update_traces(texttemplate="%{text:.0f}", textposition="outside", textfont_size=9)
+        fig_days.update_layout(height=450, margin=dict(t=50, b=120), xaxis_tickangle=-45,
+                               legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5))
+        st.plotly_chart(fig_days, use_container_width=True)
+
     csv_cov = coverage_df.to_csv(index=False).encode()
     st.download_button("\u2b07\ufe0f Export Well Coverage (CSV)", csv_cov, "well_coverage.csv", "text/csv")
 
