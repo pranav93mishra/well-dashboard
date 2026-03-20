@@ -1269,7 +1269,7 @@ with tab7:
                         "Max Depth (m)": "{:,.0f}",
                         "Total Cost (INR Cr)": "{:.3f}",
                         "Total NPT (Hrs)": "{:.1f}",
-                    }).background_gradient(subset=["Distance (km)"], cmap="RdYlGn_r"), height=min(400, len(nearby) * 40 + 60)
+                    }), height=min(400, len(nearby) * 40 + 60)
                 )
 
                 # ── Nearby Wells: Mud Parameters, Formation & Complications ──
