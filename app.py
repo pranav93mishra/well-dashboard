@@ -379,18 +379,62 @@ with tab2:
 
     # Top Activities Contributing to NPT
     st.markdown('<div class="section-header">\U0001f4cb Top Activities Contributing to NPT (by Operation)</div>', unsafe_allow_html=True)
-    mud_loss_all = data["mud_loss"]
-    if not mud_loss_all.empty:
-        activity_npt = mud_loss_all.groupby("Operation in Brief").size().reset_index(name="Count")
-        activity_npt = activity_npt[activity_npt["Operation in Brief"].str.strip() != ""].sort_values("Count", ascending=True).tail(15)
-        if not activity_npt.empty:
-            fig_activities = px.bar(activity_npt, y="Operation in Brief", x="Count",
-                                    title="Top Activities in Complications",
-                                    orientation="h", text="Count", color="Count",
-                                    color_continuous_scale="Reds")
+
+    # Combine all complication types for operations analysis
+    all_comp_frames = []
+    for _ckey in ["mud_loss", "well_activity", "stuck_up"]:
+        _cdf = data[_ckey]
+        if not _cdf.empty and "Operation in Brief" in _cdf.columns and "Phase" in _cdf.columns:
+            all_comp_frames.append(_cdf[["Operation in Brief", "Phase"]].copy())
+    all_comp_ops = pd.concat(all_comp_frames, ignore_index=True) if all_comp_frames else pd.DataFrame()
+
+    if not all_comp_ops.empty:
+        all_comp_ops["Operation in Brief"] = all_comp_ops["Operation in Brief"].str.strip()
+        all_comp_ops["Phase"] = all_comp_ops["Phase"].str.strip()
+        all_comp_ops = all_comp_ops[all_comp_ops["Operation in Brief"] != ""]
+
+        # For "Drilling" operations, break down by phase
+        # Identify drilling-related operations (case insensitive)
+        is_drilling = all_comp_ops["Operation in Brief"].str.upper().str.contains("DRILL", na=False)
+
+        # Non-drilling: keep as-is
+        non_drill = all_comp_ops[~is_drilling].copy()
+        non_drill_counts = non_drill.groupby("Operation in Brief").size().reset_index(name="Count")
+        non_drill_counts["Category"] = "Other Operations"
+
+        # Drilling: break down by phase
+        drill = all_comp_ops[is_drilling].copy()
+        if not drill.empty:
+            drill["Display Label"] = drill.apply(
+                lambda r: f"Drilling ({r['Phase']})" if r['Phase'] else "Drilling (Unknown Phase)", axis=1)
+            drill_counts = drill.groupby("Display Label").size().reset_index(name="Count")
+            drill_counts.rename(columns={"Display Label": "Operation in Brief"}, inplace=True)
+            drill_counts["Category"] = "Drilling (by Phase)"
+        else:
+            drill_counts = pd.DataFrame(columns=["Operation in Brief", "Count", "Category"])
+
+        # Combine and show top 20
+        combined_counts = pd.concat([non_drill_counts, drill_counts], ignore_index=True)
+        combined_counts = combined_counts.sort_values("Count", ascending=True).tail(20)
+
+        if not combined_counts.empty:
+            fig_activities = px.bar(
+                combined_counts, y="Operation in Brief", x="Count",
+                title="Top Activities in Complications (Drilling split by Phase)",
+                orientation="h", text="Count", color="Category",
+                color_discrete_map={
+                    "Drilling (by Phase)": "#e53935",
+                    "Other Operations": "#1976d2",
+                },
+            )
             fig_activities.update_traces(textposition="outside")
-            fig_activities.update_layout(height=max(300, len(activity_npt) * 35 + 80),
-                                         margin=dict(t=50, b=20), coloraxis_showscale=False)
+            fig_activities.update_layout(
+                height=max(400, len(combined_counts) * 35 + 80),
+                margin=dict(t=50, b=20),
+                yaxis_title="Operation / Drilling Phase",
+                xaxis_title="Count",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
             st.plotly_chart(fig_activities)
 
     csv_npt = npt_display.to_csv(index=False).encode()
