@@ -327,8 +327,32 @@ with tab2:
 
         # Filter to only actual drilling phases (hole sizes like 8.5", 12.25", 17.5", 26", 6", 20", 14-3/4" etc.)
         import re as _re
-        drilling_phase_pattern = _re.compile(r'^\d+[\.\-]?\d*(?:/\d+)?[\"\s]*(?:PH|ST)?$', _re.IGNORECASE)
+        drilling_phase_pattern = _re.compile(r'^\d+[\.\-]?\d*(?:/\d+)?[\"\s]*(?:PH|ST|DH)?$', _re.IGNORECASE)
         phase_npt_df = phase_npt_df[phase_npt_df["Phase"].apply(lambda x: bool(drilling_phase_pattern.match(x.strip())))]
+
+        # Normalize phase names to standard hole size labels
+        # e.g. '8.5"', '8.5" PH', '8.5" ST' -> '8½"', '12.25"' -> '12¼"', '17.5"' -> '17½"', etc.
+        def normalize_phase(p):
+            p = p.strip()
+            # Extract the numeric hole size and optional suffix (PH/ST/DH)
+            m = _re.match(r'^([\d\.\-]+(?:/\d+)?)["\s]*(PH|ST|DH)?$', p, _re.IGNORECASE)
+            if not m:
+                return p
+            size_str = m.group(1)
+            suffix = m.group(2)
+            # Convert fractional sizes to display form
+            size_map = {
+                '8.5': '8½"', '12.25': '12¼"', '17.5': '17½"',
+                '26': '26"', '36': '36"', '6': '6"', '20': '20"',
+                '14-3/4': '14¾"', '9.875': '9⅞"', '23': '23"',
+                '28': '28"', '24': '24"', '13.375': '13⅜"',
+            }
+            display = size_map.get(size_str, f'{size_str}"')
+            if suffix:
+                display = f'{display} {suffix.upper()}'
+            return display
+
+        phase_npt_df["Phase"] = phase_npt_df["Phase"].apply(normalize_phase)
 
         phase_npt_agg = phase_npt_df.groupby(["Phase", "Complication Type"])["NPT (Hrs)"].sum().reset_index()
 
@@ -348,10 +372,11 @@ with tab2:
             )
             fig_phase_npt.update_traces(texttemplate="%{text:.0f}", textposition="inside")
             fig_phase_npt.update_layout(
-                height=max(350, len(phase_order) * 40 + 80),
+                height=max(350, len(phase_order) * 50 + 80),
                 margin=dict(t=50, b=20),
                 yaxis_title="Drilling Phase",
                 xaxis_title="NPT (Hours)",
+                yaxis=dict(type="category"),
             )
             st.plotly_chart(fig_phase_npt)
 
