@@ -324,6 +324,12 @@ with tab2:
 
     if phase_npt_records:
         phase_npt_df = pd.concat(phase_npt_records, ignore_index=True)
+
+        # Filter to only actual drilling phases (hole sizes like 8.5", 12.25", 17.5", 26", 6", 20", 14-3/4" etc.)
+        import re as _re
+        drilling_phase_pattern = _re.compile(r'^\d+[\.\-]?\d*(?:/\d+)?[\"\s]*(?:PH|ST)?$', _re.IGNORECASE)
+        phase_npt_df = phase_npt_df[phase_npt_df["Phase"].apply(lambda x: bool(drilling_phase_pattern.match(x.strip())))]
+
         phase_npt_agg = phase_npt_df.groupby(["Phase", "Complication Type"])["NPT (Hrs)"].sum().reset_index()
 
         # Sort phases by total NPT descending
@@ -733,8 +739,8 @@ with tab6:
                                            margin=dict(t=50, b=20), coloraxis_showscale=False)
                     st.plotly_chart(fig_form)
 
-        # Loss type pie chart and depth distribution
-        col_ml_g3, col_ml_g4 = st.columns(2)
+        # Loss type pie, mud system pie, and depth distribution
+        col_ml_g3, col_ml_g4, col_ml_g5 = st.columns(3)
         with col_ml_g3:
             type_col = "Type of Loss/Stuck Up"
             if type_col in mud_loss_df.columns:
@@ -749,6 +755,19 @@ with tab6:
                     st.plotly_chart(fig_ml_pie)
 
         with col_ml_g4:
+            # Mud Loss Events by Mud System pie chart
+            if "Mud System" in mud_loss_df.columns:
+                ml_mud_sys = mud_loss_df.groupby("Mud System").size().reset_index(name="Count")
+                ml_mud_sys = ml_mud_sys[ml_mud_sys["Mud System"].astype(str).str.strip() != ""]
+                if not ml_mud_sys.empty:
+                    fig_ml_mud_pie = px.pie(ml_mud_sys, names="Mud System", values="Count",
+                                            title="Mud Loss Events by Mud System",
+                                            hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+                    fig_ml_mud_pie.update_traces(textposition="inside", textinfo="percent+label")
+                    fig_ml_mud_pie.update_layout(height=380, margin=dict(t=50, b=20))
+                    st.plotly_chart(fig_ml_mud_pie)
+
+        with col_ml_g5:
             if "Depth of Occurrence (m)" in mud_loss_df.columns:
                 ml_depth = mud_loss_df[mud_loss_df["Depth of Occurrence (m)"] > 0].copy()
                 if not ml_depth.empty:
@@ -921,6 +940,18 @@ with tab6:
                         fig_wa_pie.update_traces(textposition="inside", textinfo="percent+label")
                         fig_wa_pie.update_layout(height=380, margin=dict(t=50, b=20))
                         st.plotly_chart(fig_wa_pie)
+
+            # Well Activity Events by Mud System pie chart
+            if "Mud System" in wa_df.columns:
+                wa_mud_sys = wa_df.groupby("Mud System").size().reset_index(name="Count")
+                wa_mud_sys = wa_mud_sys[wa_mud_sys["Mud System"].astype(str).str.strip() != ""]
+                if not wa_mud_sys.empty:
+                    fig_wa_mud_pie = px.pie(wa_mud_sys, names="Mud System", values="Count",
+                                            title="Well Activity Events by Mud System",
+                                            hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+                    fig_wa_mud_pie.update_traces(textposition="inside", textinfo="percent+label")
+                    fig_wa_mud_pie.update_layout(height=380, margin=dict(t=50, b=20))
+                    st.plotly_chart(fig_wa_mud_pie)
     else:
         st.info("No well activity events for selected filters.")
 
