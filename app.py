@@ -1300,6 +1300,37 @@ with tab7:
                         avail_cols = [c for c in display_cols if c in nearby_mud.columns]
                         st.dataframe(nearby_mud[avail_cols],
                                      height=min(500, len(nearby_mud) * 38 + 60))
+
+                # ── Detailed Complication Records for Nearby Wells ──
+                st.markdown('<div class="section-header">\u26a0\ufe0f Complication Details of Nearby Wells</div>',
+                            unsafe_allow_html=True)
+                nearby_wells_list = nearby["Well Name"].tolist()
+                dist_map_comp = nearby.set_index("Well Name")["Distance (km)"].to_dict()
+                has_any_comp = False
+                for comp_type, comp_label, comp_icon, comp_color in [
+                    ("mud_loss", "Mud Loss", "\U0001f30a", "#e53935"),
+                    ("well_activity", "Well Activity", "\U0001f527", "#ff9800"),
+                    ("stuck_up", "Stuck Up", "\u2693", "#9c27b0"),
+                ]:
+                    comp_data = data[comp_type]
+                    if not comp_data.empty:
+                        nearby_comp = comp_data[comp_data["Well Name"].isin(nearby_wells_list)].copy()
+                        if not nearby_comp.empty:
+                            has_any_comp = True
+                            nearby_comp["Distance (km)"] = nearby_comp["Well Name"].map(dist_map_comp)
+                            nearby_comp = nearby_comp.sort_values("Distance (km)")
+                            st.markdown(f"**{comp_icon} {comp_label} Events ({len(nearby_comp)} records across {nearby_comp['Well Name'].nunique()} wells):**")
+                            comp_display_cols = [c for c in [
+                                "Well Name", "Distance (km)", "Phase", "Date of Occurrence",
+                                "Depth of Occurrence (m)", "Drill Depth (m)",
+                                "Mud System", "Operation in Brief",
+                                "Type of Loss/Stuck Up", "Formation Info", "Layer",
+                                "Type of Pill/Action", "Mud Volume Lost (bbl)", "NPT (Hrs)"
+                            ] if c in nearby_comp.columns]
+                            st.dataframe(nearby_comp[comp_display_cols],
+                                         height=min(400, len(nearby_comp) * 38 + 60))
+                if not has_any_comp:
+                    st.success("No complications recorded for any nearby wells.")
             else:
                 st.warning(f"No wells found within {search_radius} km of the search location.")
 
@@ -1364,6 +1395,32 @@ with tab7:
                     }),
                     height=min(300, len(well_phases) * 40 + 50)
                 )
+
+            # ── Mud Parameters table for selected well ──────────────
+            mud_params_df_detail = data["mud_params"]
+            if not mud_params_df_detail.empty:
+                well_mud = mud_params_df_detail[mud_params_df_detail["Well Name"] == selected_well]
+                if not well_mud.empty:
+                    st.markdown(f'<div class="section-header">\U0001f9ea Mud Parameters for {selected_well}</div>',
+                                unsafe_allow_html=True)
+                    mud_display_cols = [c for c in [
+                        "Phase", "Depth (m)", "Mud System", "Formation", "Lithology",
+                        "MW (PPG) Min", "MW (PPG) Max", "MW (PPG) Last",
+                        "FV (sec) Min", "FV (sec) Max", "FV (sec) Last",
+                        "PV (cP) Min", "PV (cP) Max", "PV (cP) Last",
+                        "YP (lb/100ft2) Min", "YP (lb/100ft2) Max", "YP (lb/100ft2) Last",
+                        "GEL0 (lb/100ft2) Min", "GEL0 (lb/100ft2) Max", "GEL0 (lb/100ft2) Last",
+                        "GEL10 (lb/100ft2) Min", "GEL10 (lb/100ft2) Max", "GEL10 (lb/100ft2) Last",
+                        "Solid (%) Min", "Solid (%) Max", "Solid (%) Last",
+                        "Chlorides (ppm) Min", "Chlorides (ppm) Max", "Chlorides (ppm) Last",
+                        "HTHP F/L (mL) Min", "HTHP F/L (mL) Max", "HTHP F/L (mL) Last",
+                        "ES (V) Min", "ES (V) Max", "ES (V) Last",
+                        "pH Min", "pH Max", "pH Last",
+                    ] if c in well_mud.columns]
+                    st.dataframe(well_mud[mud_display_cols],
+                                 height=min(400, len(well_mud) * 40 + 60))
+                else:
+                    st.info(f"No mud parameter data available for {selected_well}")
 
             # Complication details for selected well
             comp_total = (w_row.get('Mud Loss Events', 0) + w_row.get('Well Activity Events', 0)
