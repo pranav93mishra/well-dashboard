@@ -229,7 +229,7 @@ with tab1:
             hs_counts["Phase"] = pd.Categorical(hs_counts["Phase"], categories=phase_order, ordered=True)
             hs_counts = hs_counts.sort_values("Phase")
             fig_hs = px.bar(hs_counts, x="Phase", y="Count",
-                            title="Unique Wells per Phase", text="Count", color="Phase",
+                            title="Phase Count", text="Count", color="Phase",
                             color_discrete_sequence=px.colors.sequential.Blues_r)
             fig_hs.update_traces(textposition="outside")
             fig_hs.update_layout(showlegend=False, height=340, margin=dict(t=40, b=20),
