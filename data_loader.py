@@ -291,10 +291,27 @@ def get_chemical_totals():
                 display_name = 'Potassium Chloride'
 
             if display_name not in chem_by_name:
-                chem_by_name[display_name] = {'total_kg': 0, 'phases': {}}
+                chem_by_name[display_name] = {'total_kg': 0, 'phases': {}, 'unit_counts': {}, 'total_cost': 0}
             chem_by_name[display_name]['total_kg'] += consumption
             chem_by_name[display_name]['phases'][phase] = \
                 chem_by_name[display_name]['phases'].get(phase, 0) + consumption
+
+            # Track unit and cost
+            unit = c.get('unit', '').strip().upper()
+            if unit:
+                chem_by_name[display_name]['unit_counts'][unit] = \
+                    chem_by_name[display_name]['unit_counts'].get(unit, 0) + 1
+            cost = c.get('actual_cost_inr', 0) or 0
+            chem_by_name[display_name]['total_cost'] += cost
+
+    # Determine primary unit for each chemical (most frequent)
+    for chem_data in chem_by_name.values():
+        uc = chem_data.get('unit_counts', {})
+        if uc:
+            chem_data['unit'] = max(uc, key=uc.get)
+        else:
+            chem_data['unit'] = ''
+        del chem_data['unit_counts']
 
     return chem_by_name
 

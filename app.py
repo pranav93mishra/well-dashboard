@@ -612,13 +612,15 @@ with tab5:
                         break
                     chem_name = chemicals_to_plot[chem_idx]
                     chem_item = chem_totals[chem_name]
+                    chem_unit = chem_item.get('unit', '')
                     phases_data = chem_item.get('phases', {})
                     sorted_phases = sorted(phases_data.items(), key=lambda x: x[1], reverse=True)[:10]
                     if sorted_phases:
                         labels = [p[0] for p in sorted_phases]
                         values = [p[1] for p in sorted_phases]
+                        unit_label = f" {chem_unit}" if chem_unit else ""
                         fig_pie = px.pie(names=labels, values=values,
-                                         title=f"{chem_name}<br><sub>Total: {chem_item['total_kg']:,.0f}</sub>",
+                                         title=f"{chem_name}<br><sub>Total: {chem_item['total_kg']:,.0f}{unit_label}</sub>",
                                          hole=0.35, color_discrete_sequence=px.colors.qualitative.Set3)
                         fig_pie.update_traces(textposition="inside", textinfo="percent+label", textfont_size=9)
                         fig_pie.update_layout(height=300, margin=dict(t=60, b=10, l=10, r=10), showlegend=False)
@@ -627,6 +629,8 @@ with tab5:
         else:
             # Show detailed pie chart for the selected chemical
             chem_item = chem_totals[selected_chemical]
+            chem_unit = chem_item.get('unit', '')
+            unit_label = f" {chem_unit}" if chem_unit else ""
             phases_data = chem_item.get('phases', {})
             sorted_phases = sorted(phases_data.items(), key=lambda x: x[1], reverse=True)[:15]
             if sorted_phases:
@@ -637,7 +641,7 @@ with tab5:
                 with col_pie:
                     fig_pie = px.pie(names=labels, values=values,
                                      title=f"{selected_chemical} — Consumption by Phase<br>"
-                                           f"<sub>Total: {chem_item['total_kg']:,.0f} | "
+                                           f"<sub>Total: {chem_item['total_kg']:,.0f}{unit_label} | "
                                            f"Total Cost: INR {chem_item.get('total_cost', 0):,.0f}</sub>",
                                      hole=0.4, color_discrete_sequence=px.colors.qualitative.Set3)
                     fig_pie.update_traces(textposition="inside", textinfo="percent+label", textfont_size=10)
@@ -646,14 +650,15 @@ with tab5:
 
                 with col_info:
                     st.markdown(f"**{selected_chemical}**")
-                    st.markdown(f"- **Total Consumption:** {chem_item['total_kg']:,.0f}")
+                    st.markdown(f"- **Total Consumption:** {chem_item['total_kg']:,.0f}{unit_label}")
                     st.markdown(f"- **Total Cost (INR):** {chem_item.get('total_cost', 0):,.0f}")
+                    st.markdown(f"- **Unit:** {chem_unit if chem_unit else 'N/A'}")
                     st.markdown(f"- **Phases using it:** {len(phases_data)}")
                     st.markdown("---")
                     st.markdown("**Top Phases:**")
                     for lbl, val in sorted_phases[:10]:
                         pct = val / chem_item['total_kg'] * 100 if chem_item['total_kg'] > 0 else 0
-                        st.markdown(f"- {lbl}: {val:,.0f} ({pct:.1f}%)")
+                        st.markdown(f"- {lbl}: {val:,.0f}{unit_label} ({pct:.1f}%)")
             else:
                 st.info(f"No phase-wise data available for {selected_chemical}.")
     else:
