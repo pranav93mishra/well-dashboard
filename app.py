@@ -22,7 +22,7 @@ from data_loader import (
     MUD_TYPE_COLORS,
 )
 
-WELL_CARDS_DIR = os.environ.get("WELL_CARDS_DIR", r"C:\Users\ongca\Downloads\well_dashboard_data\well_cards\Well Cards")
+WELL_CARDS_DIR = os.environ.get("WELL_CARDS_DIR", os.path.join(os.path.dirname(__file__), "well_cards", "Well Cards"))
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(

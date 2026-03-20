@@ -15,7 +15,7 @@ import numpy as np
 
 # Paths
 DATA_JSON = os.path.join(os.path.dirname(__file__), "all_wells_data.json")
-WELL_CARDS_DIR = os.environ.get("WELL_CARDS_DIR", r"C:\Users\ongca\Downloads\well_dashboard_data\well_cards\Well Cards")
+WELL_CARDS_DIR = os.environ.get("WELL_CARDS_DIR", os.path.join(os.path.dirname(__file__), "well_cards", "Well Cards"))
 
 # Category normalization
 CATEGORY_MAP = {
