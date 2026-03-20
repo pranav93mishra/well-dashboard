@@ -187,36 +187,53 @@ with tab1:
     with col_left:
         asset_counts = filtered_wells.groupby("Asset").size().reset_index(name="Count")
         fig_asset = px.bar(asset_counts, x="Asset", y="Count", color="Asset",
-                           title="Number of Wells by Asset", text="Count",
+                           title="Number of Wells by Asset / Area", text="Count",
                            color_discrete_sequence=px.colors.qualitative.Set2)
         fig_asset.update_traces(textposition="outside")
-        fig_asset.update_layout(showlegend=False, height=320, margin=dict(t=40, b=20))
+        fig_asset.update_layout(showlegend=False, height=320, margin=dict(t=40, b=20),
+                                xaxis_title="Asset / Area")
         st.plotly_chart(fig_asset)
 
     with col_right:
         cat_counts = filtered_wells.groupby("Category").size().reset_index(name="Count")
         fig_cat = px.bar(cat_counts, x="Category", y="Count", color="Category",
-                         title="Wells by Category", text="Count",
+                         title="Wells by Well Type (Category)", text="Count",
                          color_discrete_sequence=px.colors.qualitative.Set1)
         fig_cat.update_traces(textposition="outside")
-        fig_cat.update_layout(showlegend=False, height=320, margin=dict(t=40, b=20))
+        fig_cat.update_layout(showlegend=False, height=320, margin=dict(t=40, b=20),
+                              xaxis_title="Well Type")
         st.plotly_chart(fig_cat)
+        st.caption("*Note: Asset/Area is the organizational unit (B&S, MH, NH, DW, Exploratory). "
+                   "Well Type is the drilling category (Development, Side Track, Exploratory, Workover). "
+                   "A well can be in Deepwater asset but Exploratory type.*")
 
-    st.markdown('<div class="section-header">\U0001f4cf Well Count by Phase & Hole Size</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">\U0001f4cf Well Count by Phase</div>', unsafe_allow_html=True)
 
     hole_phase = filtered_phases[filtered_phases["Hole Size"] != "N/A"].copy()
-    hole_size_order = ['42"', '36"', '26"', '17.5"', '14-3/4"', '12.25"', '8.5"', '6"']
+    # Keep only standard drilling phases
+    valid_phases = ['36"', '26"', '20"', '17.5"', '14-3/4"', '12.25"', '8.5"', '6"']
+    hole_phase = hole_phase[hole_phase["Hole Size"].isin(valid_phases)].copy()
+    # Rename to display labels
+    _phase_display_map = {
+        '36"': '36"', '26"': '26"', '20"': '20"', '17.5"': '17½"',
+        '14-3/4"': '14¾"', '12.25"': '12¼"', '8.5"': '8½"', '6"': '6"',
+    }
+    hole_phase["Phase"] = hole_phase["Hole Size"].map(_phase_display_map)
+    phase_order = ['36"', '26"', '20"', '17½"', '14¾"', '12¼"', '8½"', '6"']
 
     col_a, col_b = st.columns(2)
     with col_a:
         if not hole_phase.empty:
-            hs_counts = hole_phase.groupby("Hole Size").agg(
+            hs_counts = hole_phase.groupby("Phase").agg(
                 Count=("Well Name", "nunique")).reset_index()
-            fig_hs = px.bar(hs_counts, x="Hole Size", y="Count",
-                            title="Unique Wells per Hole Size", text="Count", color="Hole Size",
+            hs_counts["Phase"] = pd.Categorical(hs_counts["Phase"], categories=phase_order, ordered=True)
+            hs_counts = hs_counts.sort_values("Phase")
+            fig_hs = px.bar(hs_counts, x="Phase", y="Count",
+                            title="Unique Wells per Phase", text="Count", color="Phase",
                             color_discrete_sequence=px.colors.sequential.Blues_r)
             fig_hs.update_traces(textposition="outside")
-            fig_hs.update_layout(showlegend=False, height=340, margin=dict(t=40, b=20))
+            fig_hs.update_layout(showlegend=False, height=340, margin=dict(t=40, b=20),
+                                 xaxis_title="Phase", xaxis=dict(type="category"))
             st.plotly_chart(fig_hs)
 
     with col_b:
